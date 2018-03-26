@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#1d82b2</color>
+    <color name="colorSecond">#000000</color>
+    <color name="colorNotify">#1d82b2</color>
+    <color name="textcolor">#383838</color>
+    <color name="whiteyellow">#fff6d9</color>
+    <color name="whiteSecond">#9b7011</color>
+    <color name="bgcolor">#fff</color>
+    <color name="toolbar">#f6d365</color>
+    <color name="nocolor">#13ffffff</color>
+    <color name="pink">#ffdcdc</color>
+</resources>

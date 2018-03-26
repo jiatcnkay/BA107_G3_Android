@@ -1,0 +1,36 @@
+package idv.wei.ba107_g3.main;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.widget.Toast;
+
+public class Util {
+    public static String URL = "http://10.0.2.2:8081/BA107_G3/";
+    public final static String PREF_FILE = "preference";
+    public static void showMessage(Context context,int msg){
+        Toast.makeText(context,msg,Toast.LENGTH_SHORT).show();
+    }
+
+    public static Bitmap getCircleBitmap(Bitmap bitmap, float roundPx)
+    {
+        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
+                bitmap.getWidth(),
+                Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output);
+        final Paint paint = new Paint();
+        final Rect rect = new Rect(0, 0, bitmap.getWidth(),
+                bitmap.getWidth());
+        final RectF rectF = new RectF(rect);
+        paint.setAntiAlias(true);
+        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, rect, rect, paint);
+        return output;
+    }
+}
