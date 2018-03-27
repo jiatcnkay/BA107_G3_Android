@@ -5,7 +5,8 @@
         android:icon="@drawable/ic_notify"
         android:id="@+id/notify"
         app:showAsAction="always"
-        android:orderInCategory="1"/>
+        android:orderInCategory="1"
+        android:visible="false"/>
 
     <item
         android:id="@+id/btnlogin"

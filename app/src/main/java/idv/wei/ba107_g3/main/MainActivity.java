@@ -24,7 +24,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import idv.wei.ba107_g3.R;
-import idv.wei.ba107_g3.fragment.Home;
+import idv.wei.ba107_g3.activity.Home;
+import idv.wei.ba107_g3.activity.Search;
 import idv.wei.ba107_g3.member.LoginActivity;
 import idv.wei.ba107_g3.member.MemberDAO;
 import idv.wei.ba107_g3.member.MemberDAO_interface;
@@ -39,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private FragmentTransaction fragmentTransaction;
     private ActionBarDrawerToggle actionBarDrawerToggle;
     private Menu toolBarMenu;
-    private MenuItem btnlogout, btnlogin;
+    private MenuItem btnlogout, btnlogin, notify;
     private static final int REQUEST_LOGIN = 1;
     private MemberSelect memberSelect;
     private RelativeLayout navi_layout;
@@ -51,14 +52,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         find();
         setNavigation();
-        changeFragment(new Home());
         setToolbar();
-//        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
-//        account = pref.getString("account", "");
-//        if (account != null) {
-//            memberSelect = new MemberSelect();
-//            memberSelect.execute();
-//        }
+        changeFragment(new Home());
+        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
+        if(pref.getBoolean("login",false)){
+            memberSelect = new MemberSelect();
+            memberSelect.execute();
+        }
     }
 
     private void find() {
@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem item) {
-                item.setCheckable(true);
+                item.setCheckable(false);
                 drawerLayout.closeDrawers();
                 switch (item.getItemId()) {
                     case R.id.navi_item_home:
@@ -80,16 +80,14 @@ public class MainActivity extends AppCompatActivity {
                         toolbar.setTitle("Toast");
                         break;
                     case R.id.navi_item_search:
-                        // changeFragment(new SearchFragment());
-                        toolbar.setTitle("交友搜尋");
+                        // changeFragment(new Search());
+                        startActivity(new Intent(MainActivity.this, Search.class));
                         break;
                     case R.id.navi_item_chat:
                         // changeFragment(new ChatFragment());
-                        toolbar.setTitle("聊天室");
                         break;
                     case R.id.navi_item_shop:
                         // changeFragment(new ShopFragment());
-                        toolbar.setTitle("禮物商城");
                         break;
                 }
                 return true;
@@ -121,11 +119,12 @@ public class MainActivity extends AppCompatActivity {
                     case R.id.btnlogout:
                         SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
                         pref.edit().putBoolean("login", false)
-                                .putString("account", "")
-                                .putString("password", "")
+                                .remove("account")
+                                .remove("password")
                                 .apply();
                         btnlogout.setVisible(false);
                         btnlogin.setVisible(true);
+                        notify.setVisible(false);
                         navi_layout = navigationView.findViewById(R.id.navi_layout);
                         navi_layout.setVisibility(View.INVISIBLE);
                         logo = navigationView.findViewById(R.id.logo);
@@ -142,28 +141,26 @@ public class MainActivity extends AppCompatActivity {
         toolBarMenu = menu;
         btnlogin = toolBarMenu.findItem(R.id.btnlogin);
         btnlogout = toolBarMenu.findItem(R.id.btnlogout);
+        notify = toolBarMenu.findItem(R.id.notify);
+        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
+        if(pref.getBoolean("login",false)){
+            btnlogout.setVisible(true);
+            btnlogin.setVisible(false);
+            notify.setVisible(true);
+
+        }
         return true;
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
-            switch (requestCode) {
-                case REQUEST_LOGIN:
-                    SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
-                    boolean login = pref.getBoolean("login", false);
-                    if (!login) {
-                        Util.showMessage(MainActivity.this,R.string.loginfailed);
-                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                        startActivityForResult(intent, REQUEST_LOGIN);
-                    } else {
-                        btnlogin.setVisible(false);
-                        btnlogout.setVisible(true);
-                        Util.showMessage(MainActivity.this,R.string.welcome);
-                        memberSelect = new MemberSelect();
-                        memberSelect.execute();
-                    }
+        if (requestCode == REQUEST_LOGIN) {
+            MainActivity.this.invalidateOptionsMenu();
+            if (resultCode == RESULT_OK) {
+                Util.showMessage(MainActivity.this, R.string.welcome);
+                memberSelect = new MemberSelect();
+                memberSelect.execute();
             }
         }
     }
@@ -173,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
         protected MemberVO doInBackground(Void... voids) {
             SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
             String account = pref.getString("account", "");
-            Log.e(TAG,"OOOOOOOOOOOOOO = "+account);
+            Log.e(TAG, "OOOOOOOOOOOOOO = " + account);
             MemberDAO_interface dao = new MemberDAO();
             return dao.memberSelect(account);
         }
@@ -195,11 +192,12 @@ public class MainActivity extends AppCompatActivity {
         navi_layout.setVisibility(View.VISIBLE);
         logo.setVisibility(View.INVISIBLE);
         byte[] photo = memberVO.getMemPhoto();
+        // byte[] photo = Base64.decode(memberVO.getMemPhoto(), Base64.DEFAULT);
         Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
         memPhoto.setImageBitmap(bitmap);
         memName.setText(memberVO.getMemName());
-        memDeposit.setText(memberVO.getMemDeposit().toString()+" 元");
-        memBonus.setText(memberVO.getMemBonus().toString()+" 點");
+        memDeposit.setText(memberVO.getMemDeposit().toString() + " 元");
+        memBonus.setText(memberVO.getMemBonus().toString() + " 點");
     }
 
     @Override
@@ -209,4 +207,6 @@ public class MainActivity extends AppCompatActivity {
         }
         super.onPause();
     }
+
+
 }
