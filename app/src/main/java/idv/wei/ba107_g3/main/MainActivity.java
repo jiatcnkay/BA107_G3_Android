@@ -14,7 +14,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,6 +21,8 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.gson.Gson;
 
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.activity.Home;
@@ -52,17 +53,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         find();
-        Log.e(TAG,"111111111111"+drawerLayout);
-        Log.e(TAG,"222222222222"+navigationView);
         setNavigation();
         setToolbar();
         changeFragment(new Home());
         SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
         if(pref.getBoolean("login",false)){
-            Log.e(TAG,"4444444444"+navigationView);
             memberSelect = new MemberSelect();
             memberSelect.execute();
-            //showMember(memberVO);
         }
     }
 
@@ -74,7 +71,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setNavigation() {
-        Log.e(TAG,"33333333333"+navigationView);
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem item) {
@@ -130,13 +126,15 @@ public class MainActivity extends AppCompatActivity {
                         pref.edit().putBoolean("login", false)
                                 .remove("account")
                                 .remove("password")
+                                .remove("loginMem")
+                                .remove("advanced")
                                 .apply();
                         btnlogout.setVisible(false);
                         btnlogin.setVisible(true);
                         notify.setVisible(false);
-                        navi_layout = navigationView.findViewById(R.id.navi_layout);
+                        navi_layout = navigationView.getHeaderView(0).findViewById(R.id.navi_layout);
                         navi_layout.setVisibility(View.INVISIBLE);
-                        logo = navigationView.findViewById(R.id.logo);
+                        logo = navigationView.getHeaderView(0).findViewById(R.id.logo);
                         logo.setVisibility(View.VISIBLE);
                         memberVO = null;
                 }
@@ -174,9 +172,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     class MemberSelect extends AsyncTask<Void, Void, MemberVO> {
+        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
+
         @Override
         protected MemberVO doInBackground(Void... voids) {
-            SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
             String account = pref.getString("account", "");
             MemberDAO_interface dao = new MemberDAO();
             return dao.memberSelect(account);
@@ -187,19 +186,18 @@ public class MainActivity extends AppCompatActivity {
             super.onPostExecute(memberVO);
             MainActivity.this.memberVO = memberVO;
             Util.showMessage(MainActivity.this, getString(R.string.welcome)+memberVO.getMemName());
+            pref.edit().putString("loginMem",new Gson().toJson(memberVO)).commit();
             showMember(memberVO);
         }
     }
 
     public void showMember(MemberVO memberVO) {
-        Log.e(TAG,"555555555555"+navigationView);
-        ImageView logo = navigationView.findViewById(R.id.logo);
-        Log.e(TAG,"666666666666666"+logo);
-        ImageView memPhoto = navigationView.findViewById(R.id.memPhoto);
-        TextView memName = navigationView.findViewById(R.id.memName);
-        TextView memDeposit = navigationView.findViewById(R.id.memDeposit);
-        TextView memBonus = navigationView.findViewById(R.id.memBonus);
-        RelativeLayout navi_layout = navigationView.findViewById(R.id.navi_layout);
+        ImageView logo = navigationView.getHeaderView(0).findViewById(R.id.logo);
+        ImageView memPhoto = navigationView.getHeaderView(0).findViewById(R.id.memPhoto);
+        TextView memName = navigationView.getHeaderView(0).findViewById(R.id.memName);
+        TextView memDeposit = navigationView.getHeaderView(0).findViewById(R.id.memDeposit);
+        TextView memBonus = navigationView.getHeaderView(0).findViewById(R.id.memBonus);
+        RelativeLayout navi_layout = navigationView.getHeaderView(0).findViewById(R.id.navi_layout);
         navi_layout.setVisibility(View.VISIBLE);
         logo.setVisibility(View.INVISIBLE);
         byte[] photo = memberVO.getMemPhoto();

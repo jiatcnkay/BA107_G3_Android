@@ -46,7 +46,7 @@ public class Search extends AppCompatActivity {
         public Fragment getItem(int position) {
             switch (position){
                 case 0 :
-                    return new BasicSearchFragment(memberVO);
+                    return new BasicSearchFragment();
                 case 1 :
                     return new DistanceSearchFragment();
             }

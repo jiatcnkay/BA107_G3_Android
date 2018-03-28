@@ -146,7 +146,7 @@ public class MemberDAO implements MemberDAO_interface {
             connection.setUseCaches(false);
             connection.connect();
             dos = new DataOutputStream(connection.getOutputStream());
-            String req = "action=getAllMember&imageSize=300";
+            String req = "action=getAllMember&imageSize=600";
             dos.writeBytes(req);
             dos.flush();
 

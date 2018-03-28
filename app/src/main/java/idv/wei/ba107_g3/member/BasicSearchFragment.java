@@ -1,82 +1,124 @@
 package idv.wei.ba107_g3.member;
 
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.Map;
 
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.main.Util;
 
+import static android.app.Activity.RESULT_OK;
+import static android.content.Context.MODE_PRIVATE;
+
 @SuppressLint("ValidFragment")
 public class BasicSearchFragment extends Fragment {
-
     private RecyclerView recyclerView_basicsearch;
     private List<MemberVO> allMemList = new LinkedList<>();
     private MemberVO memberVO;
+    private Button btnadvanced;
+    private static final int ADAVANCED = 1;
+    private ProgressDialog progressDialog;
 
-    @SuppressLint("ValidFragment")
-    public BasicSearchFragment (MemberVO memberVO){
-        this.memberVO = memberVO;
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View view = inflater.inflate(R.layout.fragment_basicsearch, null);
+        btnadvanced = view.findViewById(R.id.btnadvanced);
+        btnadvanced.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivityForResult(new Intent(getActivity(), AdvancedSearchActivity.class), ADAVANCED);
+            }
+        });
         recyclerView_basicsearch = view.findViewById(R.id.recyclerview_basicsearch);
         recyclerView_basicsearch.setHasFixedSize(true);
         recyclerView_basicsearch.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
-        try {
-            GetALLMember getALLMember = new GetALLMember();
-            allMemList = getALLMember.execute().get();
-            if(memberVO!=null) {
-                for (int i = 0; i < allMemList.size(); i++) {
-                    if (allMemList.get(i).getMemName().equals(memberVO.getMemName()))
-                        allMemList.remove(allMemList.get(i));
-                }
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-        recyclerView_basicsearch.setAdapter(new BasicSearchAdapter(inflater));
+        GetALLMember getALLMember = new GetALLMember();
+        getALLMember.execute();
         return view;
     }
 
-    private class GetALLMember extends AsyncTask<Void, Void, List<MemberVO>> {
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == ADAVANCED) {
+            if (resultCode == RESULT_OK) {
+                SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
+                String map = pref.getString("advanced", "");
+                Gson gson = new Gson();
+                Type mapType = new TypeToken<Map<String, String>>() {
+                }.getType();
+                Map<String, String> mapmap = gson.fromJson(map.toString(), mapType);
+                Log.e("please", "mapmap:" + mapmap);
+            }
+        }
+    }
+
+
+    class GetALLMember extends AsyncTask<Void, Void, List<MemberVO>> {
+        @Override
+        protected void onPreExecute() {
+            progressDialog = new ProgressDialog(getActivity());
+            progressDialog.setMessage("Loading...");
+            progressDialog.show();
+        }
 
         @Override
         protected List<MemberVO> doInBackground(Void... voids) {
             MemberDAO_interface dao = new MemberDAO();
             return dao.getAll();
         }
+
+        @Override
+        protected void onPostExecute(List<MemberVO> memberVOS) {
+            super.onPostExecute(memberVOS);
+            progressDialog.cancel();
+            allMemList = memberVOS;
+            SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
+            memberVO = new Gson().fromJson(pref.getString("loginMem", ""), MemberVO.class);
+            if (memberVO != null) {
+                for (int i = 0; i < allMemList.size(); i++) {
+                    if (allMemList.get(i).getMemName().equals(memberVO.getMemName()))
+                        allMemList.remove(allMemList.get(i));
+                }
+            }
+            recyclerView_basicsearch.setAdapter(new BasicSearchAdapter());
+        }
     }
 
     private class BasicSearchAdapter extends RecyclerView.Adapter<BasicSearchAdapter.ViewHolder> {
-        private LayoutInflater inflater;
-
-        public BasicSearchAdapter(LayoutInflater inflater) {
-            this.inflater = inflater;
-        }
 
         class ViewHolder extends RecyclerView.ViewHolder {
             private ImageView photo;
-            private TextView name, age,gender, county;
+            private TextView name, age, gender, county;
             private CardView cardview;
 
             public ViewHolder(View itemView) {
@@ -92,15 +134,18 @@ public class BasicSearchFragment extends Fragment {
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View itemview = inflater.inflate(R.layout.cardview_basicfragment, parent, false);
+            View itemview = LayoutInflater.from(getContext()).inflate(R.layout.cardview_basicfragment, parent, false);
             return new ViewHolder(itemview);
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void onBindViewHolder(ViewHolder viewholder, int position) {
             final MemberVO member = allMemList.get(position);
-            byte[] memPhoto = member.getMemPhoto();
-            Bitmap bitmap = BitmapFactory.decodeByteArray(memPhoto, 0, memPhoto.length);
+            //byte[] memPhoto = member.getMemPhoto();
+            // byte[] photo = Base64.getEncoder().encode(memPhoto);
+            byte[] photo = Base64.decode(member.getMemPhoto(), Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
             viewholder.photo.setImageBitmap(bitmap);
             viewholder.age.setText(Util.getAge(member.getMemAge()));
             viewholder.name.setText(member.getMemName());
@@ -109,9 +154,9 @@ public class BasicSearchFragment extends Fragment {
             viewholder.cardview.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Intent intent = new Intent(getActivity(),MemberProfileActivity.class);
+                    Intent intent = new Intent(getActivity(), MemberProfileActivity.class);
                     Bundle bundle = new Bundle();
-                    bundle.putSerializable("member",member);
+                    bundle.putSerializable("member", member);
                     intent.putExtras(bundle);
                     startActivity(intent);
                 }

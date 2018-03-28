@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Base64;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -40,7 +41,10 @@ public class MemberProfileActivity extends AppCompatActivity {
     private void show() {
         Bundle bundle = getIntent().getExtras();
         member = (MemberVO) bundle.getSerializable("member");
-        byte[] photo = member.getMemPhoto();
+//        byte[] photo = member.getMemPhoto();
+//        Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
+//        memPhoto.setImageBitmap(bitmap);
+        byte[] photo = Base64.decode(member.getMemPhoto(), Base64.DEFAULT);
         Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
         memPhoto.setImageBitmap(bitmap);
         memName.setText(member.getMemName());
