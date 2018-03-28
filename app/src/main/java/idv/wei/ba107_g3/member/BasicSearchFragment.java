@@ -1,5 +1,6 @@
 package idv.wei.ba107_g3.member;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -15,15 +16,24 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import idv.wei.ba107_g3.R;
+import idv.wei.ba107_g3.main.Util;
 
+@SuppressLint("ValidFragment")
 public class BasicSearchFragment extends Fragment {
 
     private RecyclerView recyclerView_basicsearch;
-    private List<MemberVO> allMemList;
+    private List<MemberVO> allMemList = new LinkedList<>();
+    private MemberVO memberVO;
+
+    @SuppressLint("ValidFragment")
+    public BasicSearchFragment (MemberVO memberVO){
+        this.memberVO = memberVO;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -35,6 +45,12 @@ public class BasicSearchFragment extends Fragment {
         try {
             GetALLMember getALLMember = new GetALLMember();
             allMemList = getALLMember.execute().get();
+            if(memberVO!=null) {
+                for (int i = 0; i < allMemList.size(); i++) {
+                    if (allMemList.get(i).getMemName().equals(memberVO.getMemName()))
+                        allMemList.remove(allMemList.get(i));
+                }
+            }
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -60,13 +76,14 @@ public class BasicSearchFragment extends Fragment {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             private ImageView photo;
-            private TextView name, gender, county;
+            private TextView name, age,gender, county;
             private CardView cardview;
 
             public ViewHolder(View itemView) {
                 super(itemView);
                 photo = itemView.findViewById(R.id.photo);
                 name = itemView.findViewById(R.id.name);
+                age = itemView.findViewById(R.id.age);
                 gender = itemView.findViewById(R.id.gender);
                 county = itemView.findViewById(R.id.county);
                 cardview = itemView.findViewById(R.id.cardview);
@@ -81,17 +98,22 @@ public class BasicSearchFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(ViewHolder viewholder, int position) {
-            MemberVO member = allMemList.get(position);
+            final MemberVO member = allMemList.get(position);
             byte[] memPhoto = member.getMemPhoto();
             Bitmap bitmap = BitmapFactory.decodeByteArray(memPhoto, 0, memPhoto.length);
             viewholder.photo.setImageBitmap(bitmap);
+            viewholder.age.setText(Util.getAge(member.getMemAge()));
             viewholder.name.setText(member.getMemName());
             viewholder.gender.setText(member.getMemGender());
             viewholder.county.setText(member.getMemCounty());
             viewholder.cardview.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    startActivity(new Intent(getActivity(),MemberProfileActivity.class));
+                    Intent intent = new Intent(getActivity(),MemberProfileActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("member",member);
+                    intent.putExtras(bundle);
+                    startActivity(intent);
                 }
             });
         }

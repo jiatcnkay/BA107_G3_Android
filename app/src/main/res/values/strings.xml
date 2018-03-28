@@ -17,5 +17,13 @@
     <string name="loginerror1">請輸入帳密</string>
     <string name="loginerror2">帳密有誤，請重新輸入</string>
     <string name="loginfailed">登入失敗</string>
-    <string name="welcome">哈囉你好</string>
+    <string name="welcome">哈囉你好，</string>
+    <string name="memheight">身高 :\t</string>
+    <string name="memWeight">體重 :\t</string>
+    <string name="memBloodType">血型 :\t</string>
+    <string name="memInterest">興趣 :\t</string>
+    <string name="memContact">交往關係 :\t</string>
+    <string name="memEmotion">感情狀態 :\t</string>
+    <string name="dollar">元</string>
+    <string name="point">點</string>
 </resources>

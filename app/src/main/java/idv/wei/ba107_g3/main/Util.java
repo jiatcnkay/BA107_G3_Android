@@ -14,7 +14,7 @@ public class Util {
     public static String URL = "http://10.0.2.2:8081/BA107_G3/";
     public final static String PREF_FILE = "preference";
 
-    public static void showMessage(Context context,int msg){
+    public static void showMessage(Context context,String msg){
         Toast.makeText(context,msg,Toast.LENGTH_SHORT).show();
     }
 
@@ -33,5 +33,13 @@ public class Util {
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
         canvas.drawBitmap(bitmap, rect, rect, paint);
         return output;
+    }
+
+    public static String getAge(String memAge){
+        java.text.DateFormat df = new java.text.SimpleDateFormat("yyyy");
+        String formatDate = df.format(new java.util.Date());
+        Integer year = Integer.parseInt(formatDate);
+        int age = Integer.parseInt(memAge.substring(0,4));
+        return String.valueOf(year-age);
     }
 }

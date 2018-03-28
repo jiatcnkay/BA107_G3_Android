@@ -65,7 +65,7 @@ public class LoginActivity extends AppCompatActivity {
         String mem_account = account.getText().toString();
         String mem_password = password.getText().toString();
         if(mem_account.length() <= 0 || mem_password.length() <= 0){
-            Util.showMessage(this,R.string.loginerror1);
+            Util.showMessage(this,getString(R.string.loginerror1));
             return;
         }
         if(isMember(mem_account,mem_password)){
@@ -79,7 +79,7 @@ public class LoginActivity extends AppCompatActivity {
         }else {
             account.setText("");
             password.setText("");
-            Util.showMessage(this,R.string.loginerror2);
+            Util.showMessage(this,getString(R.string.loginerror2));
         }
     }
 }

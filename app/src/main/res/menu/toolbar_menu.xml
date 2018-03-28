@@ -2,11 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:icon="@drawable/ic_notify"
         android:id="@+id/notify"
-        app:showAsAction="always"
+        android:icon="@drawable/ic_notify"
         android:orderInCategory="1"
-        android:visible="false"/>
+        android:visible="false"
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/btnlogin"
@@ -15,8 +15,8 @@
         app:showAsAction="always" />
     <item
         android:id="@+id/btnlogout"
-        android:title="@string/logout"
-        app:showAsAction="always"
         android:orderInCategory="3"
-        android:visible="false"/>
+        android:title="@string/logout"
+        android:visible="false"
+        app:showAsAction="always" />
 </menu>

@@ -45,19 +45,24 @@ public class MainActivity extends AppCompatActivity {
     private MemberSelect memberSelect;
     private RelativeLayout navi_layout;
     private ImageView logo;
+    private MemberVO memberVO;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         find();
+        Log.e(TAG,"111111111111"+drawerLayout);
+        Log.e(TAG,"222222222222"+navigationView);
         setNavigation();
         setToolbar();
         changeFragment(new Home());
         SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
         if(pref.getBoolean("login",false)){
+            Log.e(TAG,"4444444444"+navigationView);
             memberSelect = new MemberSelect();
             memberSelect.execute();
+            //showMember(memberVO);
         }
     }
 
@@ -69,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setNavigation() {
+        Log.e(TAG,"33333333333"+navigationView);
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem item) {
@@ -80,8 +86,11 @@ public class MainActivity extends AppCompatActivity {
                         toolbar.setTitle("Toast");
                         break;
                     case R.id.navi_item_search:
-                        // changeFragment(new Search());
-                        startActivity(new Intent(MainActivity.this, Search.class));
+                        Intent intent = new Intent(MainActivity.this, Search.class);
+                        Bundle bundle = new Bundle();
+                        bundle.putSerializable("SelfMem",memberVO);
+                        intent.putExtras(bundle);
+                        startActivity(intent);
                         break;
                     case R.id.navi_item_chat:
                         // changeFragment(new ChatFragment());
@@ -110,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
             public boolean onMenuItemClick(MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.notify:
-                        Toast.makeText(MainActivity.this, "按下了通知鍵", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, memberVO.getMemName(), Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.btnlogin:
                         Intent intent = new Intent(MainActivity.this, LoginActivity.class);
@@ -129,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
                         navi_layout.setVisibility(View.INVISIBLE);
                         logo = navigationView.findViewById(R.id.logo);
                         logo.setVisibility(View.VISIBLE);
+                        memberVO = null;
                 }
                 return true;
             }
@@ -147,7 +157,6 @@ public class MainActivity extends AppCompatActivity {
             btnlogout.setVisible(true);
             btnlogin.setVisible(false);
             notify.setVisible(true);
-
         }
         return true;
     }
@@ -158,7 +167,6 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_LOGIN) {
             MainActivity.this.invalidateOptionsMenu();
             if (resultCode == RESULT_OK) {
-                Util.showMessage(MainActivity.this, R.string.welcome);
                 memberSelect = new MemberSelect();
                 memberSelect.execute();
             }
@@ -170,7 +178,6 @@ public class MainActivity extends AppCompatActivity {
         protected MemberVO doInBackground(Void... voids) {
             SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
             String account = pref.getString("account", "");
-            Log.e(TAG, "OOOOOOOOOOOOOO = " + account);
             MemberDAO_interface dao = new MemberDAO();
             return dao.memberSelect(account);
         }
@@ -178,12 +185,16 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(MemberVO memberVO) {
             super.onPostExecute(memberVO);
+            MainActivity.this.memberVO = memberVO;
+            Util.showMessage(MainActivity.this, getString(R.string.welcome)+memberVO.getMemName());
             showMember(memberVO);
         }
     }
 
-    private void showMember(MemberVO memberVO) {
+    public void showMember(MemberVO memberVO) {
+        Log.e(TAG,"555555555555"+navigationView);
         ImageView logo = navigationView.findViewById(R.id.logo);
+        Log.e(TAG,"666666666666666"+logo);
         ImageView memPhoto = navigationView.findViewById(R.id.memPhoto);
         TextView memName = navigationView.findViewById(R.id.memName);
         TextView memDeposit = navigationView.findViewById(R.id.memDeposit);
@@ -196,8 +207,8 @@ public class MainActivity extends AppCompatActivity {
         Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
         memPhoto.setImageBitmap(bitmap);
         memName.setText(memberVO.getMemName());
-        memDeposit.setText(memberVO.getMemDeposit().toString() + " 元");
-        memBonus.setText(memberVO.getMemBonus().toString() + " 點");
+        memDeposit.setText(memberVO.getMemDeposit().toString() + getString(R.string.dollar));
+        memBonus.setText(memberVO.getMemBonus().toString() + getString(R.string.point));
     }
 
     @Override
@@ -207,6 +218,4 @@ public class MainActivity extends AppCompatActivity {
         }
         super.onPause();
     }
-
-
 }
