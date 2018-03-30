@@ -20,9 +20,12 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.Search" />
+        <activity android:name=".activity.Talk"/>
         <activity android:name=".cart.CartActivity" />
         <activity android:name=".member.LoginActivity" />
-        <activity android:name=".member.MemberProfileActivity"></activity>
+        <activity android:name=".member.MemberProfileActivity"/>
+        <activity android:name=".member.AdvancedSearchActivity"/>
+
     </application>
 
 </manifest>

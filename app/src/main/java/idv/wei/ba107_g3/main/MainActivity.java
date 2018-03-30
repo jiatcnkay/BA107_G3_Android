@@ -27,6 +27,7 @@ import com.google.gson.Gson;
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.activity.Home;
 import idv.wei.ba107_g3.activity.Search;
+import idv.wei.ba107_g3.activity.Talk;
 import idv.wei.ba107_g3.member.LoginActivity;
 import idv.wei.ba107_g3.member.MemberDAO;
 import idv.wei.ba107_g3.member.MemberDAO_interface;
@@ -82,14 +83,19 @@ public class MainActivity extends AppCompatActivity {
                         toolbar.setTitle("Toast");
                         break;
                     case R.id.navi_item_search:
-                        Intent intent = new Intent(MainActivity.this, Search.class);
-                        Bundle bundle = new Bundle();
-                        bundle.putSerializable("SelfMem",memberVO);
-                        intent.putExtras(bundle);
-                        startActivity(intent);
+                        Intent searchIntent = new Intent(MainActivity.this, Search.class);
+                        startActivity(searchIntent);
                         break;
                     case R.id.navi_item_chat:
-                        // changeFragment(new ChatFragment());
+                        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
+                        if(!pref.getBoolean("login",false)){
+                            Toast.makeText(MainActivity.this,"請先登入",Toast.LENGTH_SHORT).show();
+                            Intent loginIntent = new Intent(MainActivity.this, LoginActivity.class);
+                            startActivityForResult(loginIntent,REQUEST_LOGIN);
+                        }else {
+                            Intent talkIntent = new Intent(MainActivity.this, Talk.class);
+                            startActivity(talkIntent);
+                        }
                         break;
                     case R.id.navi_item_shop:
                         // changeFragment(new ShopFragment());
@@ -178,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
         protected MemberVO doInBackground(Void... voids) {
             String account = pref.getString("account", "");
             MemberDAO_interface dao = new MemberDAO();
-            return dao.memberSelect(account);
+            return dao.getOneByAccount(account);
         }
 
         @Override

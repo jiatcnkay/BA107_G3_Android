@@ -74,7 +74,7 @@ public class MemberDAO implements MemberDAO_interface {
     }
 
     @Override
-    public MemberVO memberSelect(String account) {
+    public MemberVO getOneByAccount(String account) {
         String urlString = Util.URL + "MemberServlet";
         DataOutputStream dos = null;
         HttpURLConnection connection = null;
@@ -88,7 +88,7 @@ public class MemberDAO implements MemberDAO_interface {
             connection.setUseCaches(false);
             connection.connect();
             dos = new DataOutputStream(connection.getOutputStream());
-            String req = "action=memberSelect&imageSize=300&account=" + account;
+            String req = "action=getOneByAccount&imageSize=300&account=" + account;
             dos.writeBytes(req);
             dos.flush();
 
@@ -127,12 +127,7 @@ public class MemberDAO implements MemberDAO_interface {
     }
 
     @Override
-    public List<MemberVO> getLike(String gender, String county, String emotion, String interest) {
-        return null;
-    }
-
-    @Override
-    public List<MemberVO> getAll() {
+    public MemberVO getOneByMemNo(String mem_no) {
         String urlString = Util.URL + "MemberServlet";
         DataOutputStream dos = null;
         HttpURLConnection connection = null;
@@ -146,7 +141,62 @@ public class MemberDAO implements MemberDAO_interface {
             connection.setUseCaches(false);
             connection.connect();
             dos = new DataOutputStream(connection.getOutputStream());
-            String req = "action=getAllMember&imageSize=600";
+            String req = "action=getOneByMemNo&imageSize=300&mem_no=" + mem_no;
+            dos.writeBytes(req);
+            dos.flush();
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
+                inStr = new StringBuilder();
+                BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String line = "";
+                while ((line = br.readLine()) != null) {
+                    inStr.append(line);
+                }
+                br.close();
+            } else {
+                Log.d(TAG, "response code: " + responseCode);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, e.toString());
+        } finally {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException e) {
+                    Log.e(TAG, e.toString());
+                }
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+        if(inStr != null) {
+            Gson gson = new Gson();
+            Log.e(TAG,"ININININININ = " + inStr);
+            return gson.fromJson(inStr.toString(), MemberVO.class);
+        }
+        return null;
+    }
+
+    @Override
+    public List<MemberVO> getLike(String map) {
+        String urlString = Util.URL + "MemberServlet";
+        DataOutputStream dos = null;
+        HttpURLConnection connection = null;
+        StringBuilder inStr = null;
+        try {
+            URL url = new URL(urlString);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setRequestMethod("POST");
+            connection.setUseCaches(false);
+            connection.connect();
+            dos = new DataOutputStream(connection.getOutputStream());
+            Log.e("what","???????????????"+map);
+            String s = "你好請問中文為什麼有問題呢";
+            String req = "action=getLike&imageSize=300&map="+map+"&s="+s;
             dos.writeBytes(req);
             dos.flush();
 
@@ -177,7 +227,62 @@ public class MemberDAO implements MemberDAO_interface {
             }
         }if(inStr != null) {
             Gson gson = new Gson();
-            Log.e(TAG,"ININININININ = " + inStr);
+            Log.e(TAG,"likelikelike = " + inStr);
+            Type listType = new TypeToken<List<MemberVO>>(){
+            }.getType();
+            Log.e(TAG,"oooooooooo = " + gson.fromJson(inStr.toString(),listType));
+            return gson.fromJson(inStr.toString(),listType);
+        }
+        return null;
+    }
+
+    @Override
+    public List<MemberVO> getAll() {
+        String urlString = Util.URL + "MemberServlet";
+        DataOutputStream dos = null;
+        HttpURLConnection connection = null;
+        StringBuilder inStr = null;
+        try {
+            URL url = new URL(urlString);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setRequestMethod("POST");
+            connection.setUseCaches(false);
+            connection.connect();
+            dos = new DataOutputStream(connection.getOutputStream());
+            String req = "action=getAllMember&imageSize=300";
+            dos.writeBytes(req);
+            dos.flush();
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
+                inStr = new StringBuilder();
+                BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String line = "";
+                while ((line = br.readLine()) != null) {
+                    inStr.append(line);
+                }
+                br.close();
+            } else {
+                Log.d(TAG, "response code: " + responseCode);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, e.toString());
+        } finally {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException e) {
+                    Log.e(TAG, e.toString());
+                }
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }if(inStr != null) {
+            Gson gson = new Gson();
+            Log.e(TAG,"allallallall = " + inStr);
             Type listType = new TypeToken<List<MemberVO>>(){
             }.getType();
 

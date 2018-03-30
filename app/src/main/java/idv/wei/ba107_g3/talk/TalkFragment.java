@@ -1,8 +1,7 @@
 package idv.wei.ba107_g3.talk;
 
-/**
- * Created by WEI on 2018/3/24.
- */
+import android.support.v4.app.Fragment;
 
-public class TalkFragment {
+public class TalkFragment extends Fragment {
+
 }

@@ -32,7 +32,7 @@ public class MemberVO implements Serializable {
     private Date memTimeNotify;
     private String memAge;
 
-    MemberVO(){
+    public MemberVO(){
     }
 
     public String getMemNo() {

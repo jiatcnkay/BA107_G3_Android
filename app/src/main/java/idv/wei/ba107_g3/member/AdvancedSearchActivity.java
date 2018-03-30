@@ -26,6 +26,7 @@ public class AdvancedSearchActivity extends AppCompatActivity {
     private ImageView close;
     private Button confirm;
     private Map<String, String> map = new TreeMap<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

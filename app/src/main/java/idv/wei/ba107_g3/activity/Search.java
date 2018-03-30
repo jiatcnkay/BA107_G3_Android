@@ -12,12 +12,10 @@ import android.view.KeyEvent;
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.member.BasicSearchFragment;
 import idv.wei.ba107_g3.member.DistanceSearchFragment;
-import idv.wei.ba107_g3.member.MemberVO;
 
 public class Search extends AppCompatActivity {
     private TabLayout tablayout;
     private ViewPager viewPager;
-    private MemberVO memberVO;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,8 +23,6 @@ public class Search extends AppCompatActivity {
         setContentView(R.layout.tab_layout);
         tablayout = findViewById(R.id.tablayout);
         viewPager = findViewById(R.id.viewPager);
-        Bundle bundle = getIntent().getExtras();
-        memberVO = (MemberVO) bundle.getSerializable("SelfMem");
         viewPager.setAdapter(new MySearchAdapter(getSupportFragmentManager()));
         tablayout.setupWithViewPager(viewPager);
     }

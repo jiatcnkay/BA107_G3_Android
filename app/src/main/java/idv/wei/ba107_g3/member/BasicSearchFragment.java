@@ -7,14 +7,11 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
-import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,12 +21,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.main.Util;
@@ -45,12 +39,14 @@ public class BasicSearchFragment extends Fragment {
     private Button btnadvanced;
     private static final int ADAVANCED = 1;
     private ProgressDialog progressDialog;
+    private TextView noMatch;
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View view = inflater.inflate(R.layout.fragment_basicsearch, null);
+        noMatch = view.findViewById(R.id.noMatch);
         btnadvanced = view.findViewById(R.id.btnadvanced);
         btnadvanced.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,7 +56,7 @@ public class BasicSearchFragment extends Fragment {
         });
         recyclerView_basicsearch = view.findViewById(R.id.recyclerview_basicsearch);
         recyclerView_basicsearch.setHasFixedSize(true);
-        recyclerView_basicsearch.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
+
         GetALLMember getALLMember = new GetALLMember();
         getALLMember.execute();
         return view;
@@ -73,17 +69,15 @@ public class BasicSearchFragment extends Fragment {
             if (resultCode == RESULT_OK) {
                 SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
                 String map = pref.getString("advanced", "");
-                Gson gson = new Gson();
-                Type mapType = new TypeToken<Map<String, String>>() {
-                }.getType();
-                Map<String, String> mapmap = gson.fromJson(map.toString(), mapType);
-                Log.e("please", "mapmap:" + mapmap);
+                GetALLMember getALLMember = new GetALLMember();
+                getALLMember.execute(map.toString());
             }
         }
     }
 
 
-    class GetALLMember extends AsyncTask<Void, Void, List<MemberVO>> {
+    class GetALLMember extends AsyncTask<String, Void, List<MemberVO>> {
+
         @Override
         protected void onPreExecute() {
             progressDialog = new ProgressDialog(getActivity());
@@ -92,10 +86,16 @@ public class BasicSearchFragment extends Fragment {
         }
 
         @Override
-        protected List<MemberVO> doInBackground(Void... voids) {
+        protected List<MemberVO> doInBackground(String... params) {
             MemberDAO_interface dao = new MemberDAO();
-            return dao.getAll();
+            if (params.length == 0) {
+                allMemList = dao.getAll();
+            } else {
+                allMemList = dao.getLike(params[0]);
+            }
+            return allMemList;
         }
+
 
         @Override
         protected void onPostExecute(List<MemberVO> memberVOS) {
@@ -110,7 +110,12 @@ public class BasicSearchFragment extends Fragment {
                         allMemList.remove(allMemList.get(i));
                 }
             }
+            noMatch.setVisibility(View.INVISIBLE);
+            if (allMemList.size()==0)
+                noMatch.setVisibility(View.VISIBLE);
+            recyclerView_basicsearch.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
             recyclerView_basicsearch.setAdapter(new BasicSearchAdapter());
+
         }
     }
 
@@ -119,7 +124,7 @@ public class BasicSearchFragment extends Fragment {
         class ViewHolder extends RecyclerView.ViewHolder {
             private ImageView photo;
             private TextView name, age, gender, county;
-            private CardView cardview;
+            private CardView cardview_search;
 
             public ViewHolder(View itemView) {
                 super(itemView);
@@ -128,7 +133,7 @@ public class BasicSearchFragment extends Fragment {
                 age = itemView.findViewById(R.id.age);
                 gender = itemView.findViewById(R.id.gender);
                 county = itemView.findViewById(R.id.county);
-                cardview = itemView.findViewById(R.id.cardview);
+                cardview_search = itemView.findViewById(R.id.cardview_search);
             }
         }
 
@@ -138,20 +143,19 @@ public class BasicSearchFragment extends Fragment {
             return new ViewHolder(itemview);
         }
 
-        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void onBindViewHolder(ViewHolder viewholder, int position) {
+            Log.e("list", "list=" + allMemList.toString());
             final MemberVO member = allMemList.get(position);
-            //byte[] memPhoto = member.getMemPhoto();
-            // byte[] photo = Base64.getEncoder().encode(memPhoto);
-            byte[] photo = Base64.decode(member.getMemPhoto(), Base64.DEFAULT);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
+            byte[] memPhoto = member.getMemPhoto();
+            //byte[] photo = Base64.decode(member.getMemPhoto(), Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(memPhoto, 0, memPhoto.length);
             viewholder.photo.setImageBitmap(bitmap);
             viewholder.age.setText(Util.getAge(member.getMemAge()));
             viewholder.name.setText(member.getMemName());
             viewholder.gender.setText(member.getMemGender());
             viewholder.county.setText(member.getMemCounty());
-            viewholder.cardview.setOnClickListener(new View.OnClickListener() {
+            viewholder.cardview_search.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     Intent intent = new Intent(getActivity(), MemberProfileActivity.class);

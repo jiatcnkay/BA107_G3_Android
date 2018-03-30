@@ -5,7 +5,8 @@ import java.util.List;
 public interface MemberDAO_interface {
     Boolean isMember(String account,String password);
     void memberUpdate(MemberVO member);
-    MemberVO memberSelect(String account);
-    List<MemberVO> getLike(String gender,String county,String emotion,String interest);
+    MemberVO getOneByAccount(String account);
+    MemberVO getOneByMemNo(String mem_no);
+    List<MemberVO> getLike(String map);
     List<MemberVO> getAll();
 }
