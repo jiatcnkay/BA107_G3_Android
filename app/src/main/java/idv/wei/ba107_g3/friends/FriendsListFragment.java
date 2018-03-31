@@ -206,7 +206,6 @@ public class FriendsListFragment extends Fragment {
             notifyItemMoved(fromPosition, toPosition);
             return true;
         }
-
         
         @Override
         public void onItemDismiss(final int position) {
