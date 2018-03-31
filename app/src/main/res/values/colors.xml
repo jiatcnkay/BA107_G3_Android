@@ -10,4 +10,5 @@
     <color name="toolbar">#fae193</color>
     <color name="nocolor">#2d000000</color>
     <color name="pink">#ffdcdc</color>
+    <color name="whitegray">#b9b9b9</color>
 </resources>

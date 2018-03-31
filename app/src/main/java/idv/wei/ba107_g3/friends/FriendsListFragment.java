@@ -12,6 +12,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +26,7 @@ import android.widget.TextView;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import idv.wei.ba107_g3.R;
@@ -92,22 +94,39 @@ public class FriendsListFragment extends Fragment {
             Gson gson = new Gson();
             pref.edit().putString("friendsList",gson.toJson(memberVO)).commit();
             recyclerView_friendList.setLayoutManager(new StaggeredGridLayoutManager(1,StaggeredGridLayoutManager.VERTICAL));
-            recyclerView_friendList.setAdapter(new FriendAdapter());
+            FriendAdapter friendAdapter = new FriendAdapter();
+            recyclerView_friendList.setAdapter(friendAdapter);
+            ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback((ItemTouchHelperAdapter) friendAdapter);
+            ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
+            touchHelper.attachToRecyclerView(recyclerView_friendList);
 
         }
     }
 
-    class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> {
+    class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> implements ItemTouchHelperAdapter{
 
-        class ViewHolder extends RecyclerView.ViewHolder{
+        class ViewHolder extends RecyclerView.ViewHolder implements ItemTouchHelperViewHolder{
             private ImageView friendPhoto;
             private TextView friendName;
             private CardView cardview_friendList;
+            private float defaultZ;
+
             public ViewHolder(View itemView) {
                 super(itemView);
                 friendPhoto = itemView.findViewById(R.id.friendPhoto);
                 friendName = itemView.findViewById(R.id.friendName);
                 cardview_friendList = itemView.findViewById(R.id.cardview_friendList);
+                defaultZ = itemView.getTranslationZ();
+            }
+
+            @Override
+            public void onItemSelected() {
+                itemView.setTranslationZ(15.0f);
+            }
+
+            @Override
+            public void onItemClear() {
+                itemView.setTranslationZ(defaultZ);
             }
         }
 
@@ -172,6 +191,48 @@ public class FriendsListFragment extends Fragment {
         @Override
         public int getItemCount() {
             return friendList.size();
+        }
+
+        @Override
+        public boolean onItemMove(int fromPosition, int toPosition) {
+            // 將集合裡的資料進行交換
+            Collections.swap(friendList, fromPosition, toPosition);
+            notifyItemMoved(fromPosition, toPosition);
+            return true;
+        }
+
+        @Override
+        public void onItemDismiss(int position) {
+            friendList.remove(position);
+            notifyItemRemoved(position);
+        }
+    }
+
+
+    private class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
+        private ItemTouchHelperAdapter adapter;
+
+        public SimpleItemTouchHelperCallback(ItemTouchHelperAdapter adapter) {
+            this.adapter = adapter;
+        }
+
+        @Override
+        public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+            int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+            // 也可以設ItemTouchHelper.RIGHT(向右滑)，或是 ItemTouchHelper.START | ItemTouchHelper.END (左右滑都可以)
+            int swipeFlags = ItemTouchHelper.RIGHT;
+            return makeMovementFlags(dragFlags, swipeFlags);
+        }
+
+        @Override
+        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+            adapter.onItemMove(viewHolder.getAdapterPosition(), target.getAdapterPosition());
+            return true;
+        }
+
+        @Override
+        public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+            adapter.onItemDismiss(viewHolder.getAdapterPosition());
         }
     }
 }
