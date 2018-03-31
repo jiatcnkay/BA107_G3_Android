@@ -44,9 +44,9 @@ import static android.content.Context.MODE_PRIVATE;
 
 public class FriendsListFragment extends Fragment {
     private Dialog dialog;
-    private Button btnTalk,btnMem,btnBlock,btnUnBlock,btnback,btnconfirm;
-    private TextView dialog_name,dialog_gender,dialog_age;
-    private ImageView dialog_photo,dialog_close;
+    private Button btnTalk, btnMem, btnBlock, btnUnBlock, btnback, btnconfirm;
+    private TextView dialog_name, dialog_gender, dialog_age;
+    private ImageView dialog_photo, dialog_close;
     private RecyclerView recyclerView_friendList;
     private ProgressDialog progressDialog;
     private MemberVO memberVO;
@@ -57,7 +57,7 @@ public class FriendsListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
-        View view = inflater.inflate(R.layout.fragment_friendslist,container,false);
+        View view = inflater.inflate(R.layout.fragment_friendslist, container, false);
         searchfriend = view.findViewById(R.id.searchfriend);
 //        searchfriend.setOnKeyListener(new View.OnKeyListener() {
 //            @Override
@@ -77,7 +77,7 @@ public class FriendsListFragment extends Fragment {
         return view;
     }
 
-    private class GetFriendsList extends AsyncTask<String , Void , List<MemberVO>> {
+    private class GetFriendsList extends AsyncTask<String, Void, List<MemberVO>> {
         @Override
         protected void onPreExecute() {
             progressDialog = new ProgressDialog(getActivity());
@@ -96,10 +96,10 @@ public class FriendsListFragment extends Fragment {
             super.onPostExecute(memberVO);
             progressDialog.cancel();
             friendList = memberVO;
-            SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
+            SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
             Gson gson = new Gson();
-            pref.edit().putString("friendsList",gson.toJson(memberVO)).commit();
-            recyclerView_friendList.setLayoutManager(new StaggeredGridLayoutManager(1,StaggeredGridLayoutManager.VERTICAL));
+            pref.edit().putString("friendsList", gson.toJson(memberVO)).commit();
+            recyclerView_friendList.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL));
             FriendAdapter friendAdapter = new FriendAdapter();
             recyclerView_friendList.setAdapter(friendAdapter);
             ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback((ItemTouchHelperAdapter) friendAdapter);
@@ -109,7 +109,7 @@ public class FriendsListFragment extends Fragment {
         }
     }
 
-    class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> implements ItemTouchHelperAdapter{
+    class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> implements ItemTouchHelperAdapter {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             private ImageView friendPhoto;
@@ -138,7 +138,7 @@ public class FriendsListFragment extends Fragment {
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View itemView = LayoutInflater.from(getContext()).inflate(R.layout.cardview_friendlistfragment,parent,false);
+            View itemView = LayoutInflater.from(getContext()).inflate(R.layout.cardview_friendlistfragment, parent, false);
             ViewHolder viewHolder = new ViewHolder(itemView);
             return viewHolder;
         }
@@ -147,8 +147,8 @@ public class FriendsListFragment extends Fragment {
         public void onBindViewHolder(final ViewHolder viewholder, int position) {
             final MemberVO member = friendList.get(position);
             byte[] photo = member.getMemPhoto();
-            final Bitmap bitmap = BitmapFactory.decodeByteArray(photo,0,photo.length);
-            viewholder.friendPhoto.setImageBitmap(Util.getCircleBitmap(bitmap,300));
+            final Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
+            viewholder.friendPhoto.setImageBitmap(Util.getCircleBitmap(bitmap, 300));
             viewholder.friendName.setText(member.getMemName());
             viewholder.cardview_friendList.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -157,7 +157,7 @@ public class FriendsListFragment extends Fragment {
                     dialog.setTitle("Friend");
                     dialog.setCancelable(true);
                     dialog.setContentView(R.layout.dialog_friendslist);
-                    Window dw =dialog.getWindow();
+                    Window dw = dialog.getWindow();
                     WindowManager.LayoutParams lp = dw.getAttributes();
                     lp.alpha = 1.0f;
                     lp.width = 1000;
@@ -207,6 +207,7 @@ public class FriendsListFragment extends Fragment {
             return true;
         }
 
+        
         @Override
         public void onItemDismiss(final int position) {
             final MemberVO member = friendList.get(position);
@@ -215,7 +216,7 @@ public class FriendsListFragment extends Fragment {
             dialog.setTitle("deleteConfirm");
             dialog.setCancelable(false);
             dialog.setContentView(R.layout.dialog_friendslist_delete);
-            Window dw =dialog.getWindow();
+            Window dw = dialog.getWindow();
             WindowManager.LayoutParams lp = dw.getAttributes();
             lp.alpha = 1.0f;
             lp.width = 1000;
