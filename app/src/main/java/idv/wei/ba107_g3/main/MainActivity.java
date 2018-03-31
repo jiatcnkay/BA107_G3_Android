@@ -14,6 +14,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -64,7 +65,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void find() {
+    @Override
+    protected void onStart() {
+        super.onStart();
+        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
+        if(pref.getBoolean("login",false)){
+            MainActivity.this.invalidateOptionsMenu();
+        }
+        if(memberVO==null){
+            memberVO = new Gson().fromJson(pref.getString("loginMem", ""), MemberVO.class);
+        }
+    }
+
+    public void find() {
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         drawerLayout = findViewById(R.id.drawerlayout);
@@ -134,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
                                 .remove("password")
                                 .remove("loginMem")
                                 .remove("advanced")
+                                .remove("friendsList")
                                 .apply();
                         btnlogout.setVisible(false);
                         btnlogin.setVisible(true);

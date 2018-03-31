@@ -13,6 +13,7 @@ import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,15 +23,20 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import idv.wei.ba107_g3.R;
+import idv.wei.ba107_g3.main.MainActivity;
 import idv.wei.ba107_g3.main.Util;
+import idv.wei.ba107_g3.member.MemberDAO;
+import idv.wei.ba107_g3.member.MemberDAO_interface;
 import idv.wei.ba107_g3.member.MemberProfileActivity;
 import idv.wei.ba107_g3.member.MemberVO;
 
@@ -38,7 +44,7 @@ import static android.content.Context.MODE_PRIVATE;
 
 public class FriendsListFragment extends Fragment {
     private Dialog dialog;
-    private Button btnTalk,btnMem,btnBlock,btnUnBlock;
+    private Button btnTalk,btnMem,btnBlock,btnUnBlock,btnback,btnconfirm;
     private TextView dialog_name,dialog_gender,dialog_age;
     private ImageView dialog_photo,dialog_close;
     private RecyclerView recyclerView_friendList;
@@ -105,7 +111,7 @@ public class FriendsListFragment extends Fragment {
 
     class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> implements ItemTouchHelperAdapter{
 
-        class ViewHolder extends RecyclerView.ViewHolder implements ItemTouchHelperViewHolder{
+        class ViewHolder extends RecyclerView.ViewHolder {
             private ImageView friendPhoto;
             private TextView friendName;
             private CardView cardview_friendList;
@@ -119,15 +125,15 @@ public class FriendsListFragment extends Fragment {
                 defaultZ = itemView.getTranslationZ();
             }
 
-            @Override
-            public void onItemSelected() {
-                itemView.setTranslationZ(15.0f);
-            }
-
-            @Override
-            public void onItemClear() {
-                itemView.setTranslationZ(defaultZ);
-            }
+//            @Override
+//            public void onItemSelected() {
+//                itemView.setTranslationZ(15.0f);
+//            }
+//
+//            @Override
+//            public void onItemClear() {
+//                itemView.setTranslationZ(defaultZ);
+//            }
         }
 
         @Override
@@ -149,7 +155,7 @@ public class FriendsListFragment extends Fragment {
                 public void onClick(View view) {
                     dialog = new Dialog(getContext());
                     dialog.setTitle("Friend");
-                    dialog.setCancelable(false);
+                    dialog.setCancelable(true);
                     dialog.setContentView(R.layout.dialog_friendslist);
                     Window dw =dialog.getWindow();
                     WindowManager.LayoutParams lp = dw.getAttributes();
@@ -202,8 +208,39 @@ public class FriendsListFragment extends Fragment {
         }
 
         @Override
-        public void onItemDismiss(int position) {
+        public void onItemDismiss(final int position) {
+            final MemberVO member = friendList.get(position);
             friendList.remove(position);
+            dialog = new Dialog(getContext());
+            dialog.setTitle("deleteConfirm");
+            dialog.setCancelable(false);
+            dialog.setContentView(R.layout.dialog_friendslist_delete);
+            Window dw =dialog.getWindow();
+            WindowManager.LayoutParams lp = dw.getAttributes();
+            lp.alpha = 1.0f;
+            lp.width = 1000;
+            lp.height = 650;
+            dw.setAttributes(lp);
+            btnback = dialog.findViewById(R.id.btnback);
+            btnconfirm = dialog.findViewById(R.id.btnconfirm);
+            btnconfirm.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.cancel();
+                }
+            });
+            btnback.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.cancel();
+                    friendList.add(member);
+                    FriendAdapter friendAdapter = new FriendAdapter();
+                    recyclerView_friendList.setAdapter(friendAdapter);
+                }
+            });
+            FriendAdapter friendAdapter = new FriendAdapter();
+            recyclerView_friendList.setAdapter(friendAdapter);
+            dialog.show();
             notifyItemRemoved(position);
         }
     }
