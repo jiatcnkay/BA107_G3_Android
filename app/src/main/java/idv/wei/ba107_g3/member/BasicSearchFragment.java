@@ -148,7 +148,6 @@ public class BasicSearchFragment extends Fragment {
             Log.e("list", "list=" + allMemList.toString());
             final MemberVO member = allMemList.get(position);
             byte[] memPhoto = member.getMemPhoto();
-            //byte[] photo = Base64.decode(member.getMemPhoto(), Base64.DEFAULT);
             Bitmap bitmap = BitmapFactory.decodeByteArray(memPhoto, 0, memPhoto.length);
             viewholder.photo.setImageBitmap(bitmap);
             viewholder.age.setText(Util.getAge(member.getMemAge()));

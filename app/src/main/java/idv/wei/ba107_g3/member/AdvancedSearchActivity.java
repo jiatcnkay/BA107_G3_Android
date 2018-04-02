@@ -3,7 +3,6 @@ package idv.wei.ba107_g3.member;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -155,10 +154,9 @@ public class AdvancedSearchActivity extends AppCompatActivity {
             map.put("mem_county", "");
             map.put("mem_emotion", "");
         }
-        Log.e("1",map.toString());
         Gson gson = new Gson();
         SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
-        pref.edit().putString("advanced",gson.toJson(map)).commit();
+        pref.edit().putString("advanced",gson.toJson(map)).apply();
         setResult(RESULT_OK);
         finish();
     }

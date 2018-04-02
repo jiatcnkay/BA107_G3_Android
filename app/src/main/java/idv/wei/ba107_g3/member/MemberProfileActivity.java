@@ -11,7 +11,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -28,10 +27,7 @@ import java.util.concurrent.ExecutionException;
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.friends.FriendsListDAO;
 import idv.wei.ba107_g3.friends.FriendsListDAO_interface;
-import idv.wei.ba107_g3.main.MainActivity;
 import idv.wei.ba107_g3.main.Util;
-
-import static android.content.Context.MODE_PRIVATE;
 
 public class MemberProfileActivity extends AppCompatActivity {
     private ImageView memPhoto;
@@ -39,9 +35,11 @@ public class MemberProfileActivity extends AppCompatActivity {
     private MemberVO member;
     private CollapsingToolbarLayout toolbar_layout;
     private Toolbar toolbar;
-    private FloatingActionButton addfab,giftfab;
+    private FloatingActionButton addfab, giftfab,alreadyfab;
     private List<MemberVO> friendList = new ArrayList<>();
     private static final int REQUEST_LOGIN = 1;
+    private String mem_no_self;
+    private SharedPreferences pref;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +49,18 @@ public class MemberProfileActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         find();
         show();
+        try {
+            pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
+            String memJson = pref.getString("loginMem","");
+            mem_no_self = new Gson().fromJson(memJson.toString(),MemberVO.class).getMemNo();
+            HaveWait haveWait = new HaveWait();
+            if(haveWait.execute(mem_no_self,member.getMemNo()).get()){
+                addfab.setVisibility(View.INVISIBLE);
+                alreadyfab.setVisibility(View.VISIBLE);
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
         giftfab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -61,12 +71,27 @@ public class MemberProfileActivity extends AppCompatActivity {
         addfab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
-                if(!pref.getBoolean("login",false)){
-                    Toast.makeText(MemberProfileActivity.this,"請先登入",Toast.LENGTH_SHORT).show();
+                 pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
+                if (!pref.getBoolean("login", false)) {
+                    Toast.makeText(MemberProfileActivity.this, "請先登入", Toast.LENGTH_SHORT).show();
                     Intent loginIntent = new Intent(MemberProfileActivity.this, LoginActivity.class);
-                    startActivityForResult(loginIntent,REQUEST_LOGIN);
+                    startActivity(loginIntent);
+                    show();
+                }else {
+                    String memJson = pref.getString("loginMem","");
+                    mem_no_self = new Gson().fromJson(memJson.toString(),MemberVO.class).getMemNo();
+                    InsertFriend insertFriend = new InsertFriend();
+                    insertFriend.execute(mem_no_self,member.getMemNo());
+                    addfab.setVisibility(View.INVISIBLE);
+                    alreadyfab.setVisibility(View.VISIBLE);
+                    Toast.makeText(MemberProfileActivity.this,getString(R.string.sendadd),Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+        alreadyfab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(MemberProfileActivity.this,getString(R.string.alreadyadd),Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -86,24 +111,28 @@ public class MemberProfileActivity extends AppCompatActivity {
         toolbar_layout = findViewById(R.id.toolbar_layout);
         giftfab = findViewById(R.id.giftfab);
         addfab = findViewById(R.id.addfab);
+        alreadyfab = findViewById(R.id.alreadyfab);
     }
 
     private void show() {
         Bundle bundle = getIntent().getExtras();
         member = (MemberVO) bundle.getSerializable("member");
-//        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
-//        String json = pref.getString("friendsList","");
-//        Gson gson = new Gson();
-//        Type listType = new TypeToken<List<MemberVO>>(){
-//        }.getType();
-//        List<MemberVO> friendList = gson.fromJson(json.toString(),listType);
+
         SharedPreferences pref = this.getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
         MemberVO memberVO = new Gson().fromJson(pref.getString("loginMem", ""), MemberVO.class);
-        if(memberVO!=null) {
-            String mem_no = memberVO.getMemNo();
+        if (memberVO != null) {
             try {
-                GetFriendsList getFriendsList = new GetFriendsList();
-                friendList = getFriendsList.execute(mem_no).get();
+                SharedPreferences friendListpref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
+                String json = friendListpref.getString("friendsList", "");
+                Gson gson = new Gson();
+                Type listType = new TypeToken<List<MemberVO>>() {
+                }.getType();
+                friendList = gson.fromJson(json.toString(), listType);
+                if (friendList == null) {
+                    String mem_no = memberVO.getMemNo();
+                    GetFriendsList getFriendsList = new GetFriendsList();
+                    friendList = getFriendsList.execute(mem_no).get();
+                }
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
@@ -114,9 +143,9 @@ public class MemberProfileActivity extends AppCompatActivity {
                         addfab.setVisibility(View.INVISIBLE);
                     }
                 }
-            } else
-                addfab.setVisibility(View.VISIBLE);
+            }
         }
+
         byte[] photo = member.getMemPhoto();
         Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
         memPhoto.setImageBitmap(bitmap);
@@ -133,7 +162,7 @@ public class MemberProfileActivity extends AppCompatActivity {
         memEmotion.setText(getString(R.string.memEmotion) + member.getMemEmotion());
     }
 
-    private class GetFriendsList extends AsyncTask<String , Void , List<MemberVO>> {
+    class GetFriendsList extends AsyncTask<String, Void, List<MemberVO>> {
         @Override
         protected List<MemberVO> doInBackground(String... params) {
             FriendsListDAO_interface dao = new FriendsListDAO();
@@ -141,34 +170,25 @@ public class MemberProfileActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_LOGIN) {
-            if (resultCode == RESULT_OK) {
-                SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
-                pref.edit().putBoolean("login", true).commit();
-                try {
-                    MemberSelect memberSelect = new MemberSelect();
-                    MemberVO memberVO = memberSelect.execute().get();
-                    SharedPreferences putpref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
-                    putpref.edit().putString("loginMem", new Gson().toJson(memberVO)).commit();
-                    show();
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
+    class HaveWait extends AsyncTask<String, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(String... params) {
+            FriendsListDAO_interface dao = new FriendsListDAO();
+            return dao.havewait(params[0],params[1]);
         }
     }
 
-    class MemberSelect extends AsyncTask<Void, Void, MemberVO> {
-        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
-
+    class InsertFriend extends AsyncTask<String, Void, Void> {
         @Override
-        protected MemberVO doInBackground(Void... voids) {
-            String account = pref.getString("account", "");
-            MemberDAO_interface dao = new MemberDAO();
-            return dao.getOneByAccount(account);
+        protected Void doInBackground(String... params) {
+            FriendsListDAO_interface dao = new FriendsListDAO();
+             dao.insert(params[0],params[1]);
+             return null;
         }
     }
 }
+
+
+
+
+

@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -30,8 +29,6 @@ import idv.wei.ba107_g3.activity.Home;
 import idv.wei.ba107_g3.activity.Search;
 import idv.wei.ba107_g3.activity.Talk;
 import idv.wei.ba107_g3.member.LoginActivity;
-import idv.wei.ba107_g3.member.MemberDAO;
-import idv.wei.ba107_g3.member.MemberDAO_interface;
 import idv.wei.ba107_g3.member.MemberVO;
 
 public class MainActivity extends AppCompatActivity {
@@ -45,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
     private Menu toolBarMenu;
     private MenuItem btnlogout, btnlogin, notify;
     private static final int REQUEST_LOGIN = 1;
-    private MemberSelect memberSelect;
     private RelativeLayout navi_layout;
     private ImageView logo;
     private MemberVO memberVO;
@@ -58,22 +54,21 @@ public class MainActivity extends AppCompatActivity {
         setNavigation();
         setToolbar();
         changeFragment(new Home());
-        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
-        if(pref.getBoolean("login",false)){
-            memberSelect = new MemberSelect();
-            memberSelect.execute();
-        }
     }
 
+
     @Override
-    protected void onStart() {
-        super.onStart();
+    protected void onResume() {
+        super.onResume();
         SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
         if(pref.getBoolean("login",false)){
             MainActivity.this.invalidateOptionsMenu();
-        }
-        if(memberVO==null){
-            memberVO = new Gson().fromJson(pref.getString("loginMem", ""), MemberVO.class);
+            String memJson = pref.getString("loginMem","");
+            Log.e(TAG,"LOGIN"+memJson);
+            if(memJson.length()!=0){
+                 memberVO = new Gson().fromJson(memJson.toString(),MemberVO.class);
+                showMember(memberVO);
+            }
         }
     }
 
@@ -138,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case R.id.btnlogin:
                         Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                        startActivityForResult(intent, REQUEST_LOGIN);
+                        startActivity(intent);
                         break;
                     case R.id.btnlogout:
                         SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
@@ -170,45 +165,10 @@ public class MainActivity extends AppCompatActivity {
         btnlogin = toolBarMenu.findItem(R.id.btnlogin);
         btnlogout = toolBarMenu.findItem(R.id.btnlogout);
         notify = toolBarMenu.findItem(R.id.notify);
-        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
-        if(pref.getBoolean("login",false)){
-            btnlogout.setVisible(true);
-            btnlogin.setVisible(false);
-            notify.setVisible(true);
-        }
+        btnlogout.setVisible(true);
+        btnlogin.setVisible(false);
+        notify.setVisible(true);
         return true;
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_LOGIN) {
-            MainActivity.this.invalidateOptionsMenu();
-            if (resultCode == RESULT_OK) {
-                memberSelect = new MemberSelect();
-                memberSelect.execute();
-            }
-        }
-    }
-
-    class MemberSelect extends AsyncTask<Void, Void, MemberVO> {
-        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
-
-        @Override
-        protected MemberVO doInBackground(Void... voids) {
-            String account = pref.getString("account", "");
-            MemberDAO_interface dao = new MemberDAO();
-            return dao.getOneByAccount(account);
-        }
-
-        @Override
-        protected void onPostExecute(MemberVO memberVO) {
-            super.onPostExecute(memberVO);
-            MainActivity.this.memberVO = memberVO;
-            Util.showMessage(MainActivity.this, getString(R.string.welcome)+memberVO.getMemName());
-            pref.edit().putString("loginMem",new Gson().toJson(memberVO)).commit();
-            showMember(memberVO);
-        }
     }
 
     public void showMember(MemberVO memberVO) {
@@ -221,19 +181,10 @@ public class MainActivity extends AppCompatActivity {
         navi_layout.setVisibility(View.VISIBLE);
         logo.setVisibility(View.INVISIBLE);
         byte[] photo = memberVO.getMemPhoto();
-        // byte[] photo = Base64.decode(memberVO.getMemPhoto(), Base64.DEFAULT);
         Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
         memPhoto.setImageBitmap(bitmap);
         memName.setText(memberVO.getMemName());
         memDeposit.setText(memberVO.getMemDeposit().toString() + getString(R.string.dollar));
         memBonus.setText(memberVO.getMemBonus().toString() + getString(R.string.point));
-    }
-
-    @Override
-    protected void onPause() {
-        if (memberSelect != null) {
-            memberSelect.cancel(true);
-        }
-        super.onPause();
     }
 }

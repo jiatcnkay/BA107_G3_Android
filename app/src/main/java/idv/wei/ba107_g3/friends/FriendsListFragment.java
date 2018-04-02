@@ -13,7 +13,6 @@ import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,20 +22,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import idv.wei.ba107_g3.R;
-import idv.wei.ba107_g3.main.MainActivity;
 import idv.wei.ba107_g3.main.Util;
-import idv.wei.ba107_g3.member.MemberDAO;
-import idv.wei.ba107_g3.member.MemberDAO_interface;
 import idv.wei.ba107_g3.member.MemberProfileActivity;
 import idv.wei.ba107_g3.member.MemberVO;
 
@@ -92,17 +86,17 @@ public class FriendsListFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(List<MemberVO> memberVO) {
-            super.onPostExecute(memberVO);
+        protected void onPostExecute(List<MemberVO> friends) {
+            super.onPostExecute(friends);
             progressDialog.cancel();
-            friendList = memberVO;
+            friendList = friends;
             SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
             Gson gson = new Gson();
-            pref.edit().putString("friendsList", gson.toJson(memberVO)).commit();
+            pref.edit().putString("friendsList", gson.toJson(friendList)).apply();
             recyclerView_friendList.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL));
             FriendAdapter friendAdapter = new FriendAdapter();
             recyclerView_friendList.setAdapter(friendAdapter);
-            ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback((ItemTouchHelperAdapter) friendAdapter);
+            ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(friendAdapter);
             ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
             touchHelper.attachToRecyclerView(recyclerView_friendList);
 
@@ -125,15 +119,6 @@ public class FriendsListFragment extends Fragment {
                 defaultZ = itemView.getTranslationZ();
             }
 
-//            @Override
-//            public void onItemSelected() {
-//                itemView.setTranslationZ(15.0f);
-//            }
-//
-//            @Override
-//            public void onItemClear() {
-//                itemView.setTranslationZ(defaultZ);
-//            }
         }
 
         @Override
@@ -226,6 +211,11 @@ public class FriendsListFragment extends Fragment {
             btnconfirm.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
+                    String memJson = pref.getString("loginMem","");
+                    String mem_no_self = new Gson().fromJson(memJson.toString(),MemberVO.class).getMemNo();
+                    DeleteFriend deleteFriend = new DeleteFriend();
+                    deleteFriend.execute(mem_no_self,member.getMemNo());
                     dialog.cancel();
                 }
             });
@@ -270,6 +260,15 @@ public class FriendsListFragment extends Fragment {
         @Override
         public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
             adapter.onItemDismiss(viewHolder.getAdapterPosition());
+        }
+    }
+
+    class DeleteFriend extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(String... params) {
+            FriendsListDAO_interface dao = new FriendsListDAO();
+            dao.delete(params[0],params[1]);
+            return null;
         }
     }
 }

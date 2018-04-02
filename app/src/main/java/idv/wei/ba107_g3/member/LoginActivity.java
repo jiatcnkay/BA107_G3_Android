@@ -9,12 +9,17 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.google.gson.Gson;
+
+import java.util.concurrent.ExecutionException;
+
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.main.Util;
 
 public class LoginActivity extends AppCompatActivity {
     private EditText account,password;
     private Button btnlogin;
+    private MemberSelect memberSelect;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,13 +75,21 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
         if(isMember(mem_account,mem_password)){
-            SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
-            pref.edit().putBoolean("login",true)
-                    .putString("account",mem_account)
-                    .putString("password",mem_password)
-                    .apply();
-            setResult(RESULT_OK);
-            finish();
+            try {
+                SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
+                memberSelect = new MemberSelect();
+                MemberVO member = memberSelect.execute(mem_account).get();
+                String memJson = new Gson().toJson(member);
+                pref.edit().putBoolean("login", true)
+                        .putString("account", mem_account)
+                        .putString("password", mem_password)
+                        .putString("loginMem",memJson)
+                        .apply();
+                setResult(RESULT_OK);
+                finish();
+            }catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
         }else {
             account.setText("");
             password.setText("");
@@ -91,5 +104,13 @@ public class LoginActivity extends AppCompatActivity {
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    class MemberSelect extends AsyncTask<String, Void, MemberVO> {
+        @Override
+        protected MemberVO doInBackground(String... params) {
+            MemberDAO_interface dao = new MemberDAO();
+            return dao.getOneByAccount(params[0]);
+        }
     }
 }

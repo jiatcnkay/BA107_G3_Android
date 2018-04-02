@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.List;
 
 import idv.wei.ba107_g3.main.Util;
@@ -195,9 +196,8 @@ public class MemberDAO implements MemberDAO_interface {
             connection.connect();
             dos = new DataOutputStream(connection.getOutputStream());
             Log.e("what","???????????????"+map);
-            String s = "你好請問中文為什麼有問題呢";
-            String req = "action=getLike&imageSize=300&map="+map+"&s="+s;
-            dos.writeBytes(req);
+            String req = "action=getLike&imageSize=300&map=";
+            dos.writeBytes(req + URLEncoder.encode(map, "UTF-8"));
             dos.flush();
 
             int responseCode = connection.getResponseCode();
@@ -227,10 +227,9 @@ public class MemberDAO implements MemberDAO_interface {
             }
         }if(inStr != null) {
             Gson gson = new Gson();
-            Log.e(TAG,"likelikelike = " + inStr);
             Type listType = new TypeToken<List<MemberVO>>(){
             }.getType();
-            Log.e(TAG,"oooooooooo = " + gson.fromJson(inStr.toString(),listType));
+            Log.e(TAG,"getAdvancedLike = " + gson.fromJson(inStr.toString(),listType));
             return gson.fromJson(inStr.toString(),listType);
         }
         return null;
