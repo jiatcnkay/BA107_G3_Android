@@ -109,10 +109,11 @@ public class BasicSearchFragment extends Fragment {
                     if (allMemList.get(i).getMemName().equals(memberVO.getMemName()))
                         allMemList.remove(allMemList.get(i));
                 }
-            }
-            noMatch.setVisibility(View.INVISIBLE);
+            }else
+                noMatch.setVisibility(View.INVISIBLE);
             if (allMemList.size()==0)
                 noMatch.setVisibility(View.VISIBLE);
+
             recyclerView_basicsearch.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
             recyclerView_basicsearch.setAdapter(new BasicSearchAdapter());
 

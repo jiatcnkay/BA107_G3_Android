@@ -28,8 +28,8 @@
     <string name="point">點</string>
     <string name="advanced">篩選條件</string>
     <string name="nochoose">不拘</string>
-    <string name="boy">男性</string>
-    <string name="girl">女性</string>
+    <string name="boy">男</string>
+    <string name="girl">女</string>
     <string name="down20">20歲以下</string>
     <string name="from20to30">20至30歲</string>
     <string name="from30to40">30至40歲</string>
@@ -60,5 +60,6 @@
     <string name="dontnohowtosay">一言難盡</string>
     <string name="secret">保密</string>
     <string name="noMatch">無符合此搜尋條件的人</string>
-
+    <string name="alreadyadd">已發出過請求，對方尚未回應</string>
+    <string name="sendadd">送出好友申請</string>
 </resources>
