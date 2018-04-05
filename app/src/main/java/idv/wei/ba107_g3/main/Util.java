@@ -11,8 +11,8 @@ import android.graphics.RectF;
 import android.widget.Toast;
 
 public class Util {
-    public static String URL = "http://10.0.2.2:8081/BA107_G3/";
-   // public static String URL = "http://192.168.196.79:8081/BA107_G3/";
+    //public static String URL = "http://10.0.2.2:8081/BA107_G3/";
+    public static String URL = "http://192.168.0.10:8081/BA107_G3/";
     public final static String PREF_FILE = "preference";
 
     public static void showMessage(Context context,String msg){
@@ -43,4 +43,5 @@ public class Util {
         int age = Integer.parseInt(memAge.substring(0,4));
         return String.valueOf(year-age);
     }
+
 }

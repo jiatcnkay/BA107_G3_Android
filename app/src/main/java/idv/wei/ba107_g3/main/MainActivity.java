@@ -25,6 +25,7 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 
 import idv.wei.ba107_g3.R;
+import idv.wei.ba107_g3.activity.Gift;
 import idv.wei.ba107_g3.activity.Home;
 import idv.wei.ba107_g3.activity.Search;
 import idv.wei.ba107_g3.activity.Talk;
@@ -106,7 +107,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case R.id.navi_item_shop:
-                        // changeFragment(new ShopFragment());
+                        Intent giftIntent = new Intent(MainActivity.this, Gift.class);
+                        startActivity(giftIntent);
                         break;
                 }
                 return true;

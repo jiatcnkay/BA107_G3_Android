@@ -109,7 +109,7 @@ public class BasicSearchFragment extends Fragment {
                     if (allMemList.get(i).getMemName().equals(memberVO.getMemName()))
                         allMemList.remove(allMemList.get(i));
                 }
-            }else
+            }
                 noMatch.setVisibility(View.INVISIBLE);
             if (allMemList.size()==0)
                 noMatch.setVisibility(View.VISIBLE);
@@ -171,6 +171,7 @@ public class BasicSearchFragment extends Fragment {
         public int getItemCount() {
             return allMemList.size();
         }
+
     }
 }
 

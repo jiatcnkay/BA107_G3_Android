@@ -11,4 +11,9 @@
     <color name="nocolor">#2d000000</color>
     <color name="pink">#ffdcdc</color>
     <color name="whitegray">#b9b9b9</color>
+    <color name="gray">#d6d6d6</color>
+    <color name="whiteblue">#1ab4ff</color>
+    <color name="deeppink">#ff9696</color>
+    <color name="red">#ff0000</color>
+    <color name="yellow">#ffe600</color>
 </resources>

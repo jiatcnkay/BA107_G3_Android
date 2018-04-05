@@ -1,8 +1,149 @@
 package idv.wei.ba107_g3.gift;
 
-/**
- * Created by WEI on 2018/3/24.
- */
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 
-public class GiftFragment {
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import idv.wei.ba107_g3.R;
+import idv.wei.ba107_g3.gift_discount.GiftDiscountVO;
+import idv.wei.ba107_g3.main.Util;
+
+public class GiftFragment extends Fragment {
+    private EditText keyword;
+    private Button btnsearch;
+    private RecyclerView recyclerView_gift;
+    private TextView count_gift;
+    private List<GiftVO> giftVO = new ArrayList<>();
+    private int count = 1;
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        super.onCreateView(inflater, container, savedInstanceState);
+        View view = inflater.inflate(R.layout.fragment_gift, null);
+        keyword = view.findViewById(R.id.keyword);
+        btnsearch = view.findViewById(R.id.btnsearch);
+        btnsearch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String keyWord = keyword.getText().toString();
+                if (keyWord.isEmpty()) {
+                    Util.showMessage(getActivity(), getString(R.string.keyinkeyword));
+                } else {
+                    GetALLGift getALLGift = new GetALLGift();
+                    getALLGift.execute(keyWord);
+                }
+            }
+        });
+        count_gift = view.findViewById(R.id.count_gift);
+        recyclerView_gift = view.findViewById(R.id.recyclerview_gift);
+        recyclerView_gift.setHasFixedSize(true);
+
+        GetALLGift getALLGift = new GetALLGift();
+        getALLGift.execute();
+        return view;
+
+    }
+
+    class GetALLGift extends AsyncTask<String, Void, List<GiftVO>> {
+
+        @Override
+        protected List<GiftVO> doInBackground(String... strings) {
+            GiftDAO_interface dao = new GiftDAO();
+            if (strings.length == 0) {
+                giftVO = dao.getAll();
+            } else {
+                giftVO = dao.getByKeyWord(strings[0]);
+            }
+            return giftVO;
+        }
+
+        @Override
+        protected void onPostExecute(List<GiftVO> list) {
+            super.onPostExecute(list);
+            giftVO = list;
+            count_gift.setText("共" + String.valueOf(giftVO.size()) + "筆商品");
+            recyclerView_gift.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
+            recyclerView_gift.setAdapter(new GiftAdapter());
+        }
+    }
+
+
+    private class GiftAdapter extends RecyclerView.Adapter<GiftAdapter.ViewHolder> {
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            private ImageView gift_pic, like, cancellike;
+            private TextView gift_name, gift_price;
+            private Button btnadd,gift_percent;
+
+
+            public ViewHolder(View itemView) {
+                super(itemView);
+                gift_pic = itemView.findViewById(R.id.gift_pic);
+                like = itemView.findViewById(R.id.like);
+                cancellike = itemView.findViewById(R.id.cancellike);
+                gift_name = itemView.findViewById(R.id.gift_name);
+                gift_price = itemView.findViewById(R.id.gift_price);
+                btnadd = itemView.findViewById(R.id.btnadd);
+                gift_percent = itemView.findViewById(R.id.gift_percent);
+            }
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View itemview = LayoutInflater.from(getContext()).inflate(R.layout.cardview_gift, parent, false);
+            return new ViewHolder(itemview);
+        }
+
+        @Override
+        public void onBindViewHolder(ViewHolder viewHolder, int position) {
+            SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, Context.MODE_PRIVATE);
+            String json = pref.getString("giftDlist", "");
+            List<GiftDiscountVO> giftDlist = new Gson().fromJson(json.toString(), new TypeToken<List<GiftDiscountVO>>() {
+            }.getType());
+            GiftVO gift = giftVO.get(position);
+            for (int i = 0; i < giftDlist.size(); i++) {
+                if (gift.getGift_no().equals(giftDlist.get(i).getGift_no())){
+                    viewHolder.gift_percent.setVisibility(View.VISIBLE);
+                    Double percent = giftDlist.get(i).getGiftd_percent() * 100;
+                    if(percent%10==0) {
+                        int intpercent = (int)(giftDlist.get(i).getGiftd_percent() * 10);
+                        viewHolder.gift_percent.setText(String.valueOf(intpercent)+"折");
+                    }else {
+                        percent/=10;
+                        viewHolder.gift_percent.setText(String.valueOf(percent)+"折");
+                    }
+                }
+            }
+            byte[] gift_pic = gift.getGift_pic();
+            Bitmap bitmap = BitmapFactory.decodeByteArray(gift_pic, 0, gift_pic.length);
+            viewHolder.gift_pic.setImageBitmap(bitmap);
+            viewHolder.gift_name.setText(gift.getGift_name());
+            viewHolder.gift_price.setText("$" + gift.getGift_price().toString());
+
+        }
+
+        @Override
+        public int getItemCount() {
+            return giftVO.size();
+        }
+    }
 }
