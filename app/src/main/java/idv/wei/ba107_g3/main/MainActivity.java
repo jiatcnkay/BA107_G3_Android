@@ -13,7 +13,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,6 +22,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+
+import java.util.ArrayList;
 
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.activity.Gift;
@@ -61,15 +62,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        MainActivity.this.invalidateOptionsMenu();
         SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
-        if(pref.getBoolean("login",false)){
-            MainActivity.this.invalidateOptionsMenu();
-            String memJson = pref.getString("loginMem","");
-            Log.e(TAG,"LOGIN"+memJson);
-            if(memJson.length()!=0){
-                 memberVO = new Gson().fromJson(memJson.toString(),MemberVO.class);
-                showMember(memberVO);
-            }
+        String memJson = pref.getString("loginMem","");
+        if(memJson.length()!=0){
+            memberVO = new Gson().fromJson(memJson.toString(),MemberVO.class);
+            showMember(memberVO);
         }
     }
 
@@ -154,6 +152,9 @@ public class MainActivity extends AppCompatActivity {
                         logo = navigationView.getHeaderView(0).findViewById(R.id.logo);
                         logo.setVisibility(View.VISIBLE);
                         memberVO = null;
+                        Util.CART = new ArrayList<>();
+                        Util.count = 0;
+                        break;
                 }
                 return true;
             }
@@ -167,9 +168,16 @@ public class MainActivity extends AppCompatActivity {
         btnlogin = toolBarMenu.findItem(R.id.btnlogin);
         btnlogout = toolBarMenu.findItem(R.id.btnlogout);
         notify = toolBarMenu.findItem(R.id.notify);
-        btnlogout.setVisible(true);
-        btnlogin.setVisible(false);
-        notify.setVisible(true);
+        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
+        if(pref.getBoolean("login",false)) {
+            btnlogout.setVisible(true);
+            btnlogin.setVisible(false);
+            notify.setVisible(true);
+        }else {
+            btnlogout.setVisible(false);
+            btnlogin.setVisible(true);
+            notify.setVisible(false);
+        }
         return true;
     }
 

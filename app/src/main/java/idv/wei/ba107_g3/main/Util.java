@@ -10,10 +10,15 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+
+import idv.wei.ba107_g3.gift.GiftVO;
+
 public class Util {
     //public static String URL = "http://10.0.2.2:8081/BA107_G3/";
     public static String URL = "http://192.168.0.10:8081/BA107_G3/";
     public final static String PREF_FILE = "preference";
+    public static int count;
 
     public static void showMessage(Context context,String msg){
         Toast.makeText(context,msg,Toast.LENGTH_SHORT).show();
@@ -43,5 +48,7 @@ public class Util {
         int age = Integer.parseInt(memAge.substring(0,4));
         return String.valueOf(year-age);
     }
+
+    public static ArrayList<GiftVO> CART = new ArrayList<>();
 
 }

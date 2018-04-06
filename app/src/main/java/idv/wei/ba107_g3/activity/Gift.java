@@ -8,23 +8,42 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.gift.GiftFragment;
 import idv.wei.ba107_g3.gift_discount.GiftDiscountFragment;
+import idv.wei.ba107_g3.main.Util;
 
 public class Gift extends AppCompatActivity {
     private TabLayout tablayout;
     private ViewPager viewPager;
+    public static TextView count_cart;
+    private ImageView cart;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.tab_layout);
+        setContentView(R.layout.gift_tab_layout);
         tablayout = findViewById(R.id.tablayout);
         viewPager = findViewById(R.id.viewPager);
+        count_cart = findViewById(R.id.count_cart);
+        cart = findViewById(R.id.cart);
         viewPager.setAdapter(new MySearchAdapter(getSupportFragmentManager()));
         tablayout.setupWithViewPager(viewPager);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(Util.count==0)
+            count_cart.setVisibility(View.INVISIBLE);
+        else {
+            count_cart.setVisibility(View.VISIBLE);
+            count_cart.setText(String.valueOf(Util.count));
+        }
     }
 
     class MySearchAdapter extends FragmentPagerAdapter {

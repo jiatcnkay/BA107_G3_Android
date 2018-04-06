@@ -1,7 +1,6 @@
 package idv.wei.ba107_g3.gift;
 
 import java.io.Serializable;
-import java.util.List;
 
 public class GiftVO implements Serializable {
     private String gift_no;
@@ -12,7 +11,7 @@ public class GiftVO implements Serializable {
     private String gift_is_on;
     private Integer gift_track_qty;
     private Integer gift_buy_qty;
-    private List<String> giftl_name;
+    private int quantity;
 
     @Override
     // 要比對欲加入商品與購物車內商品的isbn是否相同，true則值相同
@@ -94,12 +93,12 @@ public class GiftVO implements Serializable {
         this.gift_buy_qty = gift_buy_qty;
     }
 
-    public List<String> getGiftl_name() {
-        return giftl_name;
+    public int getQuantity() {
+        return quantity;
     }
 
-    public void setGiftl_name(List<String> giftl_name) {
-        this.giftl_name = giftl_name;
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 }
 

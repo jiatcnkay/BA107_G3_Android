@@ -1,7 +1,10 @@
 package idv.wei.ba107_g3.gift_discount;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -25,8 +28,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import idv.wei.ba107_g3.R;
+import idv.wei.ba107_g3.activity.Gift;
 import idv.wei.ba107_g3.gift.GiftVO;
 import idv.wei.ba107_g3.main.Util;
+
+import static idv.wei.ba107_g3.main.Util.CART;
 
 public class GiftDiscountFragment extends Fragment{
     private RecyclerView recyclerView_giftdiscount;
@@ -34,14 +40,15 @@ public class GiftDiscountFragment extends Fragment{
     private List<GiftDiscountVO> giftDlist = new ArrayList<>();
     private List<GiftVO> giftD = new ArrayList<>();
     private GiftDAdapter giftDAdapter;
+    private TextView count_giftd;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View view = inflater.inflate(R.layout.fragment_giftdiscount, null);
+        count_giftd = view.findViewById(R.id.count_giftd);
         recyclerView_giftdiscount = view.findViewById(R.id.recyclerview_giftdiscount);
         recyclerView_giftdiscount.setHasFixedSize(true);
-
             GiftDlist GiftDlist = new GiftDlist();
             GiftDlist.execute();
         return view;
@@ -59,9 +66,9 @@ public class GiftDiscountFragment extends Fragment{
         @Override
         protected void onPostExecute(List<GiftDiscountVO> giftDiscountVOS) {
             super.onPostExecute(giftDiscountVOS);
-            giftDlist = giftDiscountVOS;
+            count_giftd.setText("共" + String.valueOf(giftDiscountVOS.size()) + "筆商品");
             SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, Context.MODE_PRIVATE);
-            pref.edit().putString("giftDlist",new Gson().toJson(giftDlist)).apply();
+            pref.edit().putString("giftDlist",new Gson().toJson(giftDiscountVOS)).apply();
             GiftD giftD = new GiftD();
             giftD.execute();
         }
@@ -135,7 +142,7 @@ public class GiftDiscountFragment extends Fragment{
             price = (int) (price * (percent/100));
             giftVO.setGift_price(price);
             viewHolder.giftd_price.setText("$"+giftVO.getGift_price().toString());
-
+            //設定名字及數量
             viewHolder.giftd_name.setText(giftVO.getGift_name());
             viewHolder.giftd_amount.setText(giftDiscountVO.getGiftd_amount().toString());
             //設定圖片
@@ -152,10 +159,56 @@ public class GiftDiscountFragment extends Fragment{
                     viewHolder.giftd_endtime.setText("剩餘"+days+"天"+hours+"小時"+minutes+"分"+seconds+"秒");
                 }
                 public void onFinish() {
-                    GiftDlist giftDlist = new GiftDlist();
-                    giftDlist.execute();
+//                    GiftDlist giftDlist = new GiftDlist();
+//                    giftDlist.execute();
+                    Intent intent = new Intent(getActivity(), Gift.class);
+                    startActivity(intent);
+                    getActivity().finish();
                 }
             }.start();
+
+            //設定加入購物車動作
+            viewHolder.btnadd.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    int index = CART.indexOf(giftVO);
+                    //找不到為-1表示第一次加入
+                    if (index == -1) {
+                        giftVO.setQuantity(1);
+                        CART.add(giftVO);
+                        Gift.count_cart.setVisibility(View.VISIBLE);
+                        Gift.count_cart.setText(String.valueOf(++Util.count));
+                    } else {
+                        GiftVO orderGift = CART.get(index);
+                        for (int i = 0; i < giftDlist.size(); i++) {
+                            if (orderGift.getGift_no().equals(giftDlist.get(i).getGift_no())) {
+                                if((orderGift.getQuantity() + 1)<=giftDlist.get(i).getGiftd_amount()){
+                                    orderGift.setQuantity(orderGift.getQuantity() + 1);
+                                }
+                            } else
+                                orderGift.setQuantity(orderGift.getQuantity() + 1);
+                        }
+                    }
+                    String text = "";
+                    for (GiftVO orderGift : CART) {
+                        text += "\n- " + orderGift.getGift_name() + " x "
+                                + orderGift.getQuantity();
+                    }
+                    String message = "目前已選購的商品: " + text;
+                    new AlertDialog.Builder(getContext())
+                            .setIcon(R.drawable.cart)
+                            .setMessage(message)
+                            .setNeutralButton("確認",
+                                    new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(
+                                                DialogInterface dialog,
+                                                int which) {
+                                            dialog.cancel();
+                                        }
+                                    }).show();
+                }
+            });
         }
 
         @Override
@@ -163,4 +216,5 @@ public class GiftDiscountFragment extends Fragment{
             return giftD.size();
         }
     }
+
 }

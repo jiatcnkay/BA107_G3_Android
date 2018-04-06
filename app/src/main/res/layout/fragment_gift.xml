@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,8 +8,9 @@
 
     <EditText
         android:id="@+id/keyword"
-        android:layout_width="290dp"
+        android:layout_width="230dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
         android:drawableLeft="@drawable/ic_search"
         android:hint="@string/keyword"
         android:inputType="textPersonName"
@@ -28,9 +30,10 @@
 
     <Button
         android:id="@+id/btnsearch"
-        android:layout_width="65dp"
-        android:layout_height="45dp"
-        android:layout_marginEnd="4dp"
+        android:layout_width="55dp"
+        android:layout_height="44dp"
+        android:layout_marginEnd="78dp"
+        android:layout_marginTop="8dp"
         android:background="@color/nocolor"
         android:text="搜尋"
         app:layout_constraintEnd_toEndOf="parent"
@@ -49,6 +52,5 @@
         app:layout_constraintHorizontal_bias="0.064"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
 
 </android.support.constraint.ConstraintLayout>
