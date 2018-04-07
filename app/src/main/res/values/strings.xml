@@ -68,4 +68,7 @@
     <string name="textprice">價格:</string>
     <string name="amount">數量:</string>
     <string name="keyinkeyword">請輸入關鍵字</string>
+    <string name="over_amount">已超過商品數量限制\n，無法再加入購物車</string>
+    <string name="current_buy">目前已選購的商品:</string>
+    <string name="confirm">確認</string>
 </resources>

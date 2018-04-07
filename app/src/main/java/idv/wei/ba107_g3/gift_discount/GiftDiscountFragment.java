@@ -140,8 +140,7 @@ public class GiftDiscountFragment extends Fragment{
             viewHolder.giftd_oldprice.setText("$"+String.valueOf(price).toString());
             viewHolder.giftd_oldprice.setPaintFlags(Paint.STRIKE_THRU_TEXT_FLAG);
             price = (int) (price * (percent/100));
-            giftVO.setGift_price(price);
-            viewHolder.giftd_price.setText("$"+giftVO.getGift_price().toString());
+            viewHolder.giftd_price.setText("$"+String.valueOf(price));
             //設定名字及數量
             viewHolder.giftd_name.setText(giftVO.getGift_name());
             viewHolder.giftd_amount.setText(giftDiscountVO.getGiftd_amount().toString());
@@ -174,7 +173,7 @@ public class GiftDiscountFragment extends Fragment{
                     int index = CART.indexOf(giftVO);
                     //找不到為-1表示第一次加入
                     if (index == -1) {
-                        giftVO.setQuantity(1);
+                        giftVO.setGift_buy_qty(1);
                         CART.add(giftVO);
                         Gift.count_cart.setVisibility(View.VISIBLE);
                         Gift.count_cart.setText(String.valueOf(++Util.count));
@@ -182,23 +181,25 @@ public class GiftDiscountFragment extends Fragment{
                         GiftVO orderGift = CART.get(index);
                         for (int i = 0; i < giftDlist.size(); i++) {
                             if (orderGift.getGift_no().equals(giftDlist.get(i).getGift_no())) {
-                                if((orderGift.getQuantity() + 1)<=giftDlist.get(i).getGiftd_amount()){
-                                    orderGift.setQuantity(orderGift.getQuantity() + 1);
+                                if((orderGift.getGift_buy_qty() + 1)>giftDlist.get(i).getGiftd_amount()){
+                                    orderGift.setGift_buy_qty(orderGift.getGift_buy_qty() - 1);
+                                    Util.showMessage(getContext(),getString(R.string.over_amount));
+                                    break;
                                 }
-                            } else
-                                orderGift.setQuantity(orderGift.getQuantity() + 1);
+                            }
                         }
+                        orderGift.setGift_buy_qty(orderGift.getGift_buy_qty() + 1);
                     }
                     String text = "";
                     for (GiftVO orderGift : CART) {
                         text += "\n- " + orderGift.getGift_name() + " x "
-                                + orderGift.getQuantity();
+                                + orderGift.getGift_buy_qty();
                     }
-                    String message = "目前已選購的商品: " + text;
+                    String message = getString(R.string.current_buy) + text;
                     new AlertDialog.Builder(getContext())
                             .setIcon(R.drawable.cart)
                             .setMessage(message)
-                            .setNeutralButton("確認",
+                            .setPositiveButton(getString(R.string.confirm),
                                     new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(

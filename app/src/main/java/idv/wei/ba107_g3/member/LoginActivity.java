@@ -11,15 +11,20 @@ import android.widget.EditText;
 
 import com.google.gson.Gson;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import idv.wei.ba107_g3.R;
+import idv.wei.ba107_g3.friends.FriendsListDAO;
+import idv.wei.ba107_g3.friends.FriendsListDAO_interface;
 import idv.wei.ba107_g3.main.Util;
 
 public class LoginActivity extends AppCompatActivity {
     private EditText account,password;
     private Button btnlogin;
     private MemberSelect memberSelect;
+    private GetFriendsList getFriendsList;
+    private List<MemberVO> friendList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,11 +84,16 @@ public class LoginActivity extends AppCompatActivity {
                 SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
                 memberSelect = new MemberSelect();
                 MemberVO member = memberSelect.execute(mem_account).get();
+                getFriendsList = new GetFriendsList();
+                friendList = getFriendsList.execute(member.getMemNo()).get();
                 String memJson = new Gson().toJson(member);
+                String friends = new Gson().toJson(friendList);
                 pref.edit().putBoolean("login", true)
                         .putString("account", mem_account)
                         .putString("password", mem_password)
                         .putString("loginMem",memJson)
+                        .putString("friendsList",friends)
+                        .putString("sendList",friends)
                         .apply();
                 setResult(RESULT_OK);
                 finish();
@@ -111,6 +121,14 @@ public class LoginActivity extends AppCompatActivity {
         protected MemberVO doInBackground(String... params) {
             MemberDAO_interface dao = new MemberDAO();
             return dao.getOneByAccount(params[0]);
+        }
+    }
+
+    class GetFriendsList extends AsyncTask<String, Void, List<MemberVO>> {
+        @Override
+        protected List<MemberVO> doInBackground(String... params) {
+            FriendsListDAO_interface dao = new FriendsListDAO();
+            return dao.getMemberFriends(params[0]);
         }
     }
 }

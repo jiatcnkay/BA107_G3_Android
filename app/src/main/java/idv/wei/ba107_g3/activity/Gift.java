@@ -1,5 +1,6 @@
 package idv.wei.ba107_g3.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -13,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import idv.wei.ba107_g3.R;
+import idv.wei.ba107_g3.cart.CartActivity;
 import idv.wei.ba107_g3.gift.GiftFragment;
 import idv.wei.ba107_g3.gift_discount.GiftDiscountFragment;
 import idv.wei.ba107_g3.main.Util;
@@ -31,6 +33,13 @@ public class Gift extends AppCompatActivity {
         viewPager = findViewById(R.id.viewPager);
         count_cart = findViewById(R.id.count_cart);
         cart = findViewById(R.id.cart);
+        cart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Gift.this, CartActivity.class);
+                startActivity(intent);
+            }
+        });
         viewPager.setAdapter(new MySearchAdapter(getSupportFragmentManager()));
         tablayout.setupWithViewPager(viewPager);
     }

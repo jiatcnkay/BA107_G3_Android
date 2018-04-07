@@ -1,7 +1,6 @@
 package idv.wei.ba107_g3.friends;
 
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -24,8 +23,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
-import java.util.ArrayList;
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,9 +42,8 @@ public class FriendsListFragment extends Fragment {
     private TextView dialog_name, dialog_gender, dialog_age;
     private ImageView dialog_photo, dialog_close;
     private RecyclerView recyclerView_friendList;
-    private ProgressDialog progressDialog;
     private MemberVO memberVO;
-    private List<MemberVO> friendList = new ArrayList<>();
+    private List<MemberVO> friendList;
     private EditText searchfriend;
 
 
@@ -61,47 +60,22 @@ public class FriendsListFragment extends Fragment {
 //                return false;
 //            }
 //        });
-        recyclerView_friendList = view.findViewById(R.id.recyclerview_friendlist);
-        recyclerView_friendList.setHasFixedSize(true);
         SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
         memberVO = new Gson().fromJson(pref.getString("loginMem", ""), MemberVO.class);
-        String mem_no = memberVO.getMemNo();
-        GetFriendsList getFriendsList = new GetFriendsList();
-        getFriendsList.execute(mem_no);
+        Type listType = new TypeToken<List<MemberVO>>() {
+        }.getType();
+        friendList = new Gson().fromJson(pref.getString("friendsList", "").toString(), listType);
+        recyclerView_friendList = view.findViewById(R.id.recyclerview_friendlist);
+        recyclerView_friendList.setHasFixedSize(true);
+        recyclerView_friendList.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL));
+        FriendAdapter friendAdapter = new FriendAdapter();
+        recyclerView_friendList.setAdapter(friendAdapter);
+        ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(friendAdapter);
+        ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
+        touchHelper.attachToRecyclerView(recyclerView_friendList);
         return view;
     }
 
-    private class GetFriendsList extends AsyncTask<String, Void, List<MemberVO>> {
-        @Override
-        protected void onPreExecute() {
-            progressDialog = new ProgressDialog(getActivity());
-            progressDialog.setMessage("Loading...");
-            progressDialog.show();
-        }
-
-        @Override
-        protected List<MemberVO> doInBackground(String... params) {
-            FriendsListDAO_interface dao = new FriendsListDAO();
-            return dao.getMemberFriends(params[0]);
-        }
-
-        @Override
-        protected void onPostExecute(List<MemberVO> friends) {
-            super.onPostExecute(friends);
-            progressDialog.cancel();
-            friendList = friends;
-            SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
-            Gson gson = new Gson();
-            pref.edit().putString("friendsList", gson.toJson(friendList)).apply();
-            recyclerView_friendList.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL));
-            FriendAdapter friendAdapter = new FriendAdapter();
-            recyclerView_friendList.setAdapter(friendAdapter);
-            ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(friendAdapter);
-            ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
-            touchHelper.attachToRecyclerView(recyclerView_friendList);
-
-        }
-    }
 
     class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> implements ItemTouchHelperAdapter {
 

@@ -63,8 +63,7 @@ public class MemberProfileActivity extends AppCompatActivity {
                 if (!pref.getBoolean("login", false)) {
                     Toast.makeText(MemberProfileActivity.this, "請先登入", Toast.LENGTH_SHORT).show();
                     Intent loginIntent = new Intent(MemberProfileActivity.this, LoginActivity.class);
-                    startActivity(loginIntent);
-                    show();
+                    startActivityForResult(loginIntent,REQUEST_LOGIN);
                 } else {
                     String memJson = pref.getString("loginMem", "");
                     mem_no_self = new Gson().fromJson(memJson.toString(), MemberVO.class).getMemNo();
@@ -128,23 +127,15 @@ public class MemberProfileActivity extends AppCompatActivity {
         SharedPreferences pref = this.getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
         MemberVO memberVO = new Gson().fromJson(pref.getString("loginMem", ""), MemberVO.class);
         if (memberVO != null) {
-            try {
                 SharedPreferences friendListpref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
                 String json = friendListpref.getString("friendsList", "");
                 Gson gson = new Gson();
                 Type listType = new TypeToken<List<MemberVO>>() {
                 }.getType();
                 friendList = gson.fromJson(json.toString(), listType);
-                if (friendList == null) {
-                    String mem_no = memberVO.getMemNo();
-                    GetFriendsList getFriendsList = new GetFriendsList();
-                    friendList = getFriendsList.execute(mem_no).get();
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-
             if (friendList != null) {
+                SharedPreferences sendpref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
+                sendpref.edit().putString("sendList", gson.toJson(friendList)).apply();
                 for (int i = 0; i < friendList.size(); i++) {
                     if (friendList.get(i).getMemAccount().equals(member.getMemAccount())) {
                         addfab.setVisibility(View.INVISIBLE);
@@ -169,11 +160,11 @@ public class MemberProfileActivity extends AppCompatActivity {
         memEmotion.setText(getString(R.string.memEmotion) + member.getMemEmotion());
     }
 
-    class GetFriendsList extends AsyncTask<String, Void, List<MemberVO>> {
-        @Override
-        protected List<MemberVO> doInBackground(String... params) {
-            FriendsListDAO_interface dao = new FriendsListDAO();
-            return dao.getMemberFriends(params[0]);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode==REQUEST_LOGIN){
+            if(resultCode==RESULT_OK)
+                show();
         }
     }
 

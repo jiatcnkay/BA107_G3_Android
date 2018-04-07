@@ -143,6 +143,7 @@ public class MainActivity extends AppCompatActivity {
                                 .remove("loginMem")
                                 .remove("advanced")
                                 .remove("friendsList")
+                                .remove("sendList")
                                 .apply();
                         btnlogout.setVisible(false);
                         btnlogin.setVisible(true);

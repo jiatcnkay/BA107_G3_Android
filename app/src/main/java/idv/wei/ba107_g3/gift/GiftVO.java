@@ -11,7 +11,6 @@ public class GiftVO implements Serializable {
     private String gift_is_on;
     private Integer gift_track_qty;
     private Integer gift_buy_qty;
-    private int quantity;
 
     @Override
     // 要比對欲加入商品與購物車內商品的isbn是否相同，true則值相同
@@ -93,12 +92,5 @@ public class GiftVO implements Serializable {
         this.gift_buy_qty = gift_buy_qty;
     }
 
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
 }
 
