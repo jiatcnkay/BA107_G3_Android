@@ -11,6 +11,7 @@ import android.widget.EditText;
 
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -88,12 +89,20 @@ public class LoginActivity extends AppCompatActivity {
                 friendList = getFriendsList.execute(member.getMemNo()).get();
                 String memJson = new Gson().toJson(member);
                 String friends = new Gson().toJson(friendList);
+                List<MemberVO> sendList = new ArrayList<>();
+                MemberVO noOne = new MemberVO();
+                noOne.setMemName("請選擇");
+                sendList.add(noOne);
+                for(MemberVO memberVO : friendList){
+                    sendList.add(memberVO);
+                }
+                String send = new Gson().toJson(sendList);
                 pref.edit().putBoolean("login", true)
                         .putString("account", mem_account)
                         .putString("password", mem_password)
                         .putString("loginMem",memJson)
                         .putString("friendsList",friends)
-                        .putString("sendList",friends)
+                        .putString("sendList",send)
                         .apply();
                 setResult(RESULT_OK);
                 finish();

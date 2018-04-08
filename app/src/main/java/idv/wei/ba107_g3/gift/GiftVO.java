@@ -13,7 +13,7 @@ public class GiftVO implements Serializable {
     private Integer gift_buy_qty;
 
     @Override
-    // 要比對欲加入商品與購物車內商品的isbn是否相同，true則值相同
+    // 要比對欲加入商品與購物車內商品的gift_no是否相同，true則值相同
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;

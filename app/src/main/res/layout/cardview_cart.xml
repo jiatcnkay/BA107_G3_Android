@@ -108,7 +108,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
+                android:layout_marginLeft="25dp"
                 android:layout_marginTop="8dp"
                 android:text="贈送數量"
                 android:textSize="14sp"
@@ -117,9 +117,9 @@
         </LinearLayout>
         <LinearLayout
             android:id="@+id/add_person_layout"
-            android:layout_width="200dp"
+            android:layout_width="275dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="100dp"
+            android:layout_marginStart="63dp"
             android:layout_marginTop="120dp"
             android:orientation="vertical"
             card_view:layout_constraintStart_toStartOf="parent"
