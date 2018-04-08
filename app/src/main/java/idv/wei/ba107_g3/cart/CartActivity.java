@@ -1,6 +1,5 @@
 package idv.wei.ba107_g3.cart;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -11,9 +10,11 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -69,21 +70,23 @@ public class CartActivity extends AppCompatActivity {
     }
 
     public void getPrice() {
-        int amount = 0, price = 0, coupons = 0;
+        int amount = 0, price = 0, coupons = 0 , total = 0;
         for (int i = 0; i < Util.CART.size(); i++) {
             GiftVO giftVO = Util.CART.get(i);
             amount = giftVO.getGift_buy_qty();
-            price += (giftVO.getGift_price() * amount);
+            price = (giftVO.getGift_price() * amount);
             coupons = Integer.parseInt(coupons_money.getText().toString());
             //是否為折價商品，如是的話價格折價
             for (int j = 0; j < giftDlist.size(); j++) {
                 if (giftVO.getGift_no().equals(giftDlist.get(j).getGift_no())) {
-                    price = (int) (price * giftDlist.get(j).getGiftd_percent());
+                    price = (int) (price * (giftDlist.get(j).getGiftd_percent()));
+                    break;
                 }
             }
+            total += price;
         }
-        total_gift_first_money.setText("$" + String.valueOf(price));
-        total_gift_last_money.setText("$" + String.valueOf(price + coupons));
+        total_gift_first_money.setText("$" + String.valueOf(total));
+        total_gift_last_money.setText("$" + String.valueOf(total + coupons));
     }
 
     private class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
@@ -124,6 +127,7 @@ public class CartActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(final ViewHolder viewHolder, int position) {
             int price = 0;
+
             final GiftVO giftVO = Util.CART.get(position);
             byte[] pic = giftVO.getGift_pic();
             Bitmap bitmap = BitmapFactory.decodeByteArray(pic, 0, pic.length);
@@ -230,6 +234,7 @@ public class CartActivity extends AppCompatActivity {
             viewHolder.btn_add_person.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    //取得送禮名單
                     SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
                     Type listType = new TypeToken<List<MemberVO>>() {
                     }.getType();
@@ -238,11 +243,61 @@ public class CartActivity extends AppCompatActivity {
                     for(MemberVO member : List){
                         sendList.add(member.getMemName());
                     }
-                    Spinner spinner = new Spinner(CartActivity.this);
+                    //製作下拉式送禮名單
+                    final Spinner namespinner = new Spinner(CartActivity.this);
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(CartActivity.this, android.R.layout.simple_spinner_item,sendList);
                     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    spinner.setAdapter(adapter);
-                    viewHolder.add_person_layout.addView(spinner);
+                    namespinner.setAdapter(adapter);
+                    namespinner.setSelection(0,true);
+                    namespinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                            String name = parent.getItemAtPosition(position).toString();
+                            Log.e("tag","name="+name);
+                            Log.e("tag","name="+giftVO.getGift_name());
+                        }
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
+                        }
+                    });
+                    //製作下拉式贈送數目
+                    String[] number = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
+                    final Spinner numspinner = new Spinner(CartActivity.this);
+                    ArrayAdapter<String> numadapter = new ArrayAdapter<>(CartActivity.this, android.R.layout.simple_spinner_item,number);
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    numspinner.setAdapter(numadapter);
+                    numspinner.setSelection(0, true);
+                    numspinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                            String amount = parent.getItemAtPosition(position).toString();
+                            Log.e("tag","name="+namespinner.getSelectedItem().toString());
+                            if(Integer.parseInt(amount)>giftVO.getGift_buy_qty()) {
+                                Util.showMessage(CartActivity.this, "不得超過購買數量");
+                                numspinner.setSelection(0, true);
+                            }
+                        }
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
+                        }
+                    });
+                    //移除按鈕
+                    ImageView close = new ImageView(CartActivity.this);
+                    close.setImageResource(R.drawable.ic_close);
+                    //把剛剛新增的view放到這個新增的layout
+                    final LinearLayout linearLayout = new LinearLayout(CartActivity.this);
+                    linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+                    viewHolder.add_person_layout.addView(linearLayout);
+                    linearLayout.addView(namespinner);
+                    linearLayout.addView(numspinner);
+                    linearLayout.addView(close);
+                    //等layout設置好後，建立移除按鈕監聽器
+                    close.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            linearLayout.setVisibility(View.GONE);
+                        }
+                    });
                 }
             });
         }
