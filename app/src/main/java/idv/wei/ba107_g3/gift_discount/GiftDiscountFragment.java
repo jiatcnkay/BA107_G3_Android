@@ -158,8 +158,7 @@ public class GiftDiscountFragment extends Fragment{
                     viewHolder.giftd_endtime.setText("剩餘"+days+"天"+hours+"小時"+minutes+"分"+seconds+"秒");
                 }
                 public void onFinish() {
-//                    GiftDlist giftDlist = new GiftDlist();
-//                    giftDlist.execute();
+                    Util.showMessage(getContext(),giftVO.getGift_name()+" 限時優惠結束");
                     Intent intent = new Intent(getActivity(), Gift.class);
                     startActivity(intent);
                     getActivity().finish();
