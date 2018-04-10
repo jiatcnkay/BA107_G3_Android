@@ -1,10 +1,8 @@
 package idv.wei.ba107_g3.gift_discount;
 
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,6 +11,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
@@ -23,6 +22,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,11 +32,11 @@ import idv.wei.ba107_g3.activity.Gift;
 import idv.wei.ba107_g3.gift.GiftVO;
 import idv.wei.ba107_g3.main.Util;
 
+import static idv.wei.ba107_g3.gift.GiftFragment.recyclerView_gift;
 import static idv.wei.ba107_g3.main.Util.CART;
 
 public class GiftDiscountFragment extends Fragment{
-    private RecyclerView recyclerView_giftdiscount;
-    private ProgressDialog progressDialog;
+    public static RecyclerView recyclerView_giftdiscount;
     private List<GiftDiscountVO> giftDlist = new ArrayList<>();
     private List<GiftVO> giftD = new ArrayList<>();
     private GiftDAdapter giftDAdapter;
@@ -90,7 +90,6 @@ public class GiftDiscountFragment extends Fragment{
             recyclerView_giftdiscount.setLayoutManager(new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL));
             giftDAdapter = new GiftDAdapter();
             recyclerView_giftdiscount.setAdapter(giftDAdapter);
-
         }
     }
 
@@ -100,6 +99,7 @@ public class GiftDiscountFragment extends Fragment{
             private ImageView giftd_pic,like,cancellike;
             private TextView giftd_name,giftd_price,giftd_amount,giftd_oldprice,giftd_endtime;
             private Button btnadd,giftd_percent;
+            private CardView cardview_giftdiscount;
 
             public ViewHolder(View itemView) {
                 super(itemView);
@@ -113,6 +113,7 @@ public class GiftDiscountFragment extends Fragment{
                 giftd_oldprice = itemView.findViewById(R.id.giftd_oldprice);
                 giftd_endtime = itemView.findViewById(R.id.giftd_endtime);
                 btnadd = itemView.findViewById(R.id.btnadd);
+                cardview_giftdiscount = itemView.findViewById(R.id.cardview_giftdiscount);
             }
         }
 
@@ -124,6 +125,11 @@ public class GiftDiscountFragment extends Fragment{
 
         @Override
         public void onBindViewHolder(final ViewHolder viewHolder, int position) {
+            SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, Context.MODE_PRIVATE);
+            String json = pref.getString("giftDlist", "");
+            giftDlist = new Gson().fromJson(json.toString(), new TypeToken<List<GiftDiscountVO>>() {
+            }.getType());
+
             final GiftVO giftVO = giftD.get(position);
             final GiftDiscountVO giftDiscountVO = giftDlist.get(position);
             //設定折價數
@@ -159,9 +165,9 @@ public class GiftDiscountFragment extends Fragment{
                 }
                 public void onFinish() {
                     Util.showMessage(getContext(),giftVO.getGift_name()+" 限時優惠結束");
-                    Intent intent = new Intent(getActivity(), Gift.class);
-                    startActivity(intent);
-                    getActivity().finish();
+                    GiftDlist GiftDlist = new GiftDlist();
+                    GiftDlist.execute();
+                    recyclerView_gift.getAdapter().notifyDataSetChanged();
                 }
             }.start();
 
@@ -169,6 +175,14 @@ public class GiftDiscountFragment extends Fragment{
             viewHolder.btnadd.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+
+                    //判斷如果為限時商品但數量為0的話，不能加入購物車
+                    for (int i = 0; i < giftDlist.size(); i++) {
+                        if (giftVO.getGift_no().equals(giftDlist.get(i).getGift_no()) && giftDlist.get(i).getGiftd_amount()==0) {
+                            Util.showMessage(getContext(),"數量為0不能加入購物車");
+                            return;
+                        }
+                    }
                     int index = CART.indexOf(giftVO);
                     //找不到為-1表示第一次加入
                     if (index == -1) {

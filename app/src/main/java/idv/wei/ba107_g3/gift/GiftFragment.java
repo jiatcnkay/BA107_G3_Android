@@ -1,5 +1,6 @@
 package idv.wei.ba107_g3.gift;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -25,6 +26,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import idv.wei.ba107_g3.R;
@@ -37,9 +39,10 @@ import static idv.wei.ba107_g3.main.Util.CART;
 public class GiftFragment extends Fragment {
     private EditText keyword;
     private Button btnsearch;
-    private RecyclerView recyclerView_gift;
+    public static RecyclerView recyclerView_gift;
     private TextView count_gift;
     private List<GiftVO> giftVO = new ArrayList<>();
+    private List<GiftDiscountVO> giftDlist = new ArrayList<>();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -121,20 +124,29 @@ public class GiftFragment extends Fragment {
             return new ViewHolder(itemview);
         }
 
+        @SuppressLint("ResourceAsColor")
         @Override
         public void onBindViewHolder(final ViewHolder viewHolder, int position) {
             SharedPreferences pref = getActivity().getSharedPreferences(Util.PREF_FILE, Context.MODE_PRIVATE);
             String json = pref.getString("giftDlist", "");
-            final List<GiftDiscountVO> giftDlist = new Gson().fromJson(json.toString(), new TypeToken<List<GiftDiscountVO>>() {
+            giftDlist = new Gson().fromJson(json.toString(), new TypeToken<List<GiftDiscountVO>>() {
             }.getType());
+            Iterator<GiftDiscountVO> iterator = giftDlist.iterator();
+            while(iterator.hasNext()){
+                if(iterator.next().getGiftd_amount()==0)
+                    iterator.remove();
+            }
             final GiftVO gift = giftVO.get(position);
-
             byte[] gift_pic = gift.getGift_pic();
             Bitmap bitmap = BitmapFactory.decodeByteArray(gift_pic, 0, gift_pic.length);
             viewHolder.gift_pic.setImageBitmap(bitmap);
             viewHolder.gift_name.setText(gift.getGift_name());
+            viewHolder.gift_price.setTextColor(Color.BLACK);
             viewHolder.gift_price.setText("$" + gift.getGift_price().toString());
-
+            viewHolder.gift_percent.setVisibility(View.INVISIBLE);
+            viewHolder.gift_oldprice.setVisibility(View.INVISIBLE);
+            viewHolder.textamount.setVisibility(View.INVISIBLE);
+            viewHolder.gift_amount.setVisibility(View.INVISIBLE);
             for (int i = 0; i < giftDlist.size(); i++) {
                 if (gift.getGift_no().equals(giftDlist.get(i).getGift_no())) {
                     //設定折價數

@@ -1,8 +1,11 @@
 package idv.wei.ba107_g3.gift_order;
 
-/**
- * Created by WEI on 2018/3/24.
- */
+import java.util.List;
+
+import idv.wei.ba107_g3.gift_discount.GiftDiscountVO;
 
 public interface GiftOrderDAO_interface {
+
+    List<GiftDiscountVO> insert(String jsonGiftOrderVO, String jsonGiftOrderDetailVOList, String jsonGiftReceiveList);
+
 }

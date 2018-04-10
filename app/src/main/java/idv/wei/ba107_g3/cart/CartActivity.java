@@ -1,12 +1,14 @@
 package idv.wei.ba107_g3.cart;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -35,25 +37,35 @@ import java.util.List;
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.gift.GiftVO;
 import idv.wei.ba107_g3.gift_discount.GiftDiscountVO;
+import idv.wei.ba107_g3.gift_order.GiftOrderDAO;
+import idv.wei.ba107_g3.gift_order.GiftOrderDAO_interface;
+import idv.wei.ba107_g3.gift_order.GiftOrderVO;
+import idv.wei.ba107_g3.gift_order_detail.GiftOrderDetailVO;
+import idv.wei.ba107_g3.gift_receive.GiftReceiveVO;
 import idv.wei.ba107_g3.main.Util;
 import idv.wei.ba107_g3.member.LoginActivity;
 import idv.wei.ba107_g3.member.MemberVO;
 
+import static idv.wei.ba107_g3.gift.GiftFragment.recyclerView_gift;
+import static idv.wei.ba107_g3.gift_discount.GiftDiscountFragment.recyclerView_giftdiscount;
+
 public class CartActivity extends AppCompatActivity {
-    private RecyclerView recyclerview_gift;
+    private RecyclerView recyclerview_cart;
     private TextView btn_coupons, total_amount, total_gift_first_money, coupons_money, total_gift_last_money;
     private Button btncheckout;
     private List<GiftDiscountVO> giftDlist;
+    private List<GiftDiscountVO> checkoutGiftList;
     private ArrayList<GiftReceiveVO> receiveList = new ArrayList<>();
     private String mem_no_self;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cart);
         find();
-        recyclerview_gift.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL));
-        recyclerview_gift.setAdapter(new CartAdapter(this));
+        recyclerview_cart.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL));
+        recyclerview_cart.setAdapter(new CartAdapter(this));
     }
 
     @Override
@@ -67,6 +79,11 @@ public class CartActivity extends AppCompatActivity {
         }
         giftDlist = new Gson().fromJson(pref.getString("giftDlist", "").toString(), new TypeToken<List<GiftDiscountVO>>() {
         }.getType());
+        Iterator<GiftDiscountVO> iterator = giftDlist.iterator();
+        while(iterator.hasNext()){
+            if(iterator.next().getGiftd_amount()==0)
+                iterator.remove();
+        }
         getPrice();
     }
 
@@ -78,8 +95,8 @@ public class CartActivity extends AppCompatActivity {
         coupons_money = findViewById(R.id.coupons_money);
         total_gift_last_money = findViewById(R.id.total_gift_last_money);
         btncheckout = findViewById(R.id.btncheckout);
-        recyclerview_gift = findViewById(R.id.recyclerview_gift);
-        recyclerview_gift.setHasFixedSize(true);
+        recyclerview_cart = findViewById(R.id.recyclerview_gift);
+        recyclerview_cart.setHasFixedSize(true);
     }
 
     public void getPrice() {
@@ -87,7 +104,7 @@ public class CartActivity extends AppCompatActivity {
         for (int i = 0; i < Util.CART.size(); i++) {
             GiftVO giftVO = Util.CART.get(i);
             amount = giftVO.getGift_buy_qty();
-            price = (giftVO.getGift_price() * amount);
+            price = giftVO.getGift_price();
             coupons = Integer.parseInt(coupons_money.getText().toString());
             //是否為折價商品，如是的話價格折價
             for (int j = 0; j < giftDlist.size(); j++) {
@@ -96,7 +113,7 @@ public class CartActivity extends AppCompatActivity {
                     break;
                 }
             }
-            total += price;
+            total += (price * amount);
         }
         total_gift_first_money.setText("$" + String.valueOf(total));
         total_gift_last_money.setText("$" + String.valueOf(total + coupons));
@@ -110,14 +127,44 @@ public class CartActivity extends AppCompatActivity {
             startActivity(loginIntent);
             return;
         }
+        
+
+        //設定訂單
+        GiftOrderVO giftOrderVO = new GiftOrderVO();
+        giftOrderVO.setMem_no(mem_no_self);
+        giftOrderVO.setCoup_no(null);
+        giftOrderVO.setGifto_remark(null);
+
+        //設定訂單明細及禮物收贈禮明細
+        List<GiftOrderDetailVO> goDetailList = new ArrayList<>();
         for(int i = 0; i < Util.CART.size() ; i++){
-            int amount = 0;
-            for(int j = 0 ; j < receiveList.size() ; j++){
-                if(Util.CART.get(i).getGift_no().equals(receiveList.get(j).getGift_no())){
-                    amount += receiveList.get(j).getGiftr_amount();
+            int price = Util.CART.get(i).getGift_price();
+            GiftOrderDetailVO giftOrderDetailVO = new GiftOrderDetailVO();
+            giftOrderDetailVO.setGift_no(Util.CART.get(i).getGift_no());
+            giftOrderDetailVO.setGiftod_unit(price);
+            giftOrderDetailVO.setGiftod_amount(Util.CART.get(i).getGift_buy_qty());
+            giftOrderDetailVO.setGiftod_money(price * (Util.CART.get(i).getGift_buy_qty()));
+            giftOrderDetailVO.setGiftod_inventory(0);
+            for (int j = 0; j < giftDlist.size(); j++) {
+                //找優惠商品
+                if (Util.CART.get(i).getGift_no().equals(giftDlist.get(j).getGift_no())) {
+                    Double percent = giftDlist.get(j).getGiftd_percent() * 100;
+                    price = (int) (price * (percent / 100));
+                    giftOrderDetailVO.setGiftod_unit(price);
+                    giftOrderDetailVO.setGiftd_no(giftDlist.get(j).getGiftd_no());
+                    giftOrderDetailVO.setGiftod_amount(Util.CART.get(i).getGift_buy_qty());
+                    giftOrderDetailVO.setGiftod_money(price * (Util.CART.get(i).getGift_buy_qty()));
                 }
             }
-            if((Util.CART.get(i).getGift_buy_qty()-amount)!=0){
+            goDetailList.add(giftOrderDetailVO);
+
+            int amount = 0;
+            for(int k = 0 ; k < receiveList.size() ; k++){
+                if(giftOrderDetailVO.getGift_no().equals(receiveList.get(k).getGift_no())){
+                    amount += receiveList.get(k).getGiftr_amount();
+                }
+            }
+            if((giftOrderDetailVO.getGiftod_amount()-amount)!=0){
                 GiftReceiveVO giftReceiveVO = new GiftReceiveVO();
                 giftReceiveVO.setGift_no(Util.CART.get(i).getGift_no());
                 giftReceiveVO.setGiftr_amount(Util.CART.get(i).getGift_buy_qty()-amount);
@@ -125,12 +172,70 @@ public class CartActivity extends AppCompatActivity {
                 giftReceiveVO.setMem_no_other(mem_no_self);
                 receiveList.add(giftReceiveVO);
             }
+
+            Log.e("tag","GiftReceiveVO="+giftOrderDetailVO.getGift_no());
+            Log.e("tag","GiftReceiveVO="+giftOrderDetailVO.getGiftod_amount());
+            Log.e("tag","GiftReceiveVO="+giftOrderDetailVO.getGiftod_unit());
+            Log.e("tag","GiftReceiveVO="+giftOrderDetailVO.getGiftod_money());
         }
-        for(GiftReceiveVO giftReceiveVO : receiveList) {
-            Log.e("tag", "ReceiveVO1=" + giftReceiveVO.getGift_no());
-            Log.e("tag", "ReceiveVO1=" + giftReceiveVO.getGiftr_amount());
-            Log.e("tag", "ReceiveVO1=" + giftReceiveVO.getMem_no_self());
-            Log.e("tag", "ReceiveVO1=" + giftReceiveVO.getMem_no_other());
+
+        Log.e("tag", "GiftOrderVO=" + giftOrderVO.getMem_no());
+
+
+
+        String jsonGiftOrderVO = new Gson().toJson(giftOrderVO);
+        String jsonGiftOrderDetailVOList = new Gson().toJson(goDetailList);
+        String jsonGiftReceiveList = new Gson().toJson(receiveList);
+        GiftOrder giftOrder = new GiftOrder();
+        giftOrder.execute(jsonGiftOrderVO,jsonGiftOrderDetailVOList,jsonGiftReceiveList);
+    }
+
+    private class GiftOrder extends AsyncTask<String,Void,List<GiftDiscountVO>> {
+        @Override
+        protected void onPreExecute() {
+            progressDialog = new ProgressDialog(CartActivity.this);
+            progressDialog.setMessage("Loading...");
+            progressDialog.show();
+        }
+
+        @Override
+        protected List<GiftDiscountVO> doInBackground(String... strings) {
+            GiftOrderDAO_interface dao = new GiftOrderDAO();
+            return dao.insert(strings[0],strings[1],strings[2]);
+        }
+
+        @Override
+        protected void onPostExecute(List<GiftDiscountVO> giftDiscountVOS) {
+            super.onPostExecute(giftDiscountVOS);
+            progressDialog.cancel();
+            if(giftDiscountVOS!=null){
+                SharedPreferences pref = CartActivity.this.getSharedPreferences(Util.PREF_FILE, Context.MODE_PRIVATE);
+                pref.edit().putString("giftDlist",new Gson().toJson(giftDiscountVOS)).apply();
+                StringBuilder sb = new StringBuilder();
+                sb.append("因以下幾種原因:\n");
+                    for(int i = 0 ; i < Util.CART.size() ; i++){
+                        for(int  j = 0 ; j < giftDiscountVOS.size() ; j++){
+                        if(giftDiscountVOS.get(j).getGift_no().equals(Util.CART.get(i).getGift_no()) && giftDiscountVOS.get(j).getGiftd_amount() < Util.CART.get(i).getGift_buy_qty()){
+                            if(giftDiscountVOS.get(j).getGiftd_amount()!=0){
+                                sb.append((i+1)+". "+Util.CART.get(i).getGift_name()+"，此優惠商品剩餘數量 : "+giftDiscountVOS.get(j).getGiftd_amount()+"\n");
+                                Util.CART.get(i).setGift_buy_qty(giftDiscountVOS.get(j).getGiftd_amount());
+                            }else{
+                                sb.append((i+1)+". "+Util.CART.get(i).getGift_name()+"，此優惠商品已完售，故恢復成原價\n");
+                                giftDiscountVOS.remove(giftDiscountVOS.get(j));
+                            }
+                        }
+                    }
+                }
+                sb.append("請麻煩確認數量及價格後，再進行購買，Thanks~");
+                Util.showMessage(CartActivity.this,sb.toString());
+                giftDlist = giftDiscountVOS;
+                recyclerview_cart.getAdapter().notifyDataSetChanged();
+                recyclerView_giftdiscount.getAdapter().notifyDataSetChanged();
+                recyclerView_gift.getAdapter().notifyDataSetChanged();
+                getPrice();
+            }else{
+                Util.showMessage(CartActivity.this,"結帳成功");
+            }
         }
     }
 
@@ -171,8 +276,7 @@ public class CartActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(final ViewHolder viewHolder, int position) {
-            int price = 0;
-
+            int amount = 0,price = 0;
             final GiftVO giftVO = Util.CART.get(position);
             byte[] pic = giftVO.getGift_pic();
             final Bitmap bitmap = BitmapFactory.decodeByteArray(pic, 0, pic.length);
@@ -181,13 +285,14 @@ public class CartActivity extends AppCompatActivity {
             viewHolder.gift_amount.setText(giftVO.getGift_buy_qty().toString());
 
             //設定價格
-            price = (giftVO.getGift_price() * giftVO.getGift_buy_qty());
-            viewHolder.gift_price.setText("$" + String.valueOf(price));
+            price = giftVO.getGift_price();
+            amount = giftVO.getGift_buy_qty();
+            viewHolder.gift_price.setText("$" + String.valueOf(price * amount));
             //是否為折價商品，如是的話價格折價
             for (int i = 0; i < giftDlist.size(); i++) {
                 if (giftVO.getGift_no().equals(giftDlist.get(i).getGift_no())) {
                     price = (int) (price * giftDlist.get(i).getGiftd_percent());
-                    viewHolder.gift_price.setText("$" + String.valueOf(price));
+                    viewHolder.gift_price.setText("$" + String.valueOf(price * amount));
                 }
             }
 
@@ -195,29 +300,30 @@ public class CartActivity extends AppCompatActivity {
             viewHolder.add_amount.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    int addprice = 0;
                     viewHolder.less_amount.setEnabled(true);
                     giftVO.setGift_buy_qty(giftVO.getGift_buy_qty() + 1);
                     viewHolder.gift_amount.setText(giftVO.getGift_buy_qty().toString());
                     //無限時優惠商品設定
-                    addprice = (giftVO.getGift_price() * giftVO.getGift_buy_qty());
-                    viewHolder.gift_price.setText("$" + String.valueOf(addprice));
+                    int price = giftVO.getGift_price();
+                    int amount = giftVO.getGift_buy_qty();
+                    viewHolder.gift_price.setText("$" + String.valueOf(price * amount));
                     //有限時優惠商品設定
                     for (int i = 0; i < giftDlist.size(); i++) {
                         if (giftVO.getGift_no().equals(giftDlist.get(i).getGift_no())) {
+                            //假如購買數量大於優惠商品限購數量時
                             if (giftVO.getGift_buy_qty() > giftDlist.get(i).getGiftd_amount()) {
                                 Util.showMessage(CartActivity.this, getString(R.string.over_amount));
                                 viewHolder.add_amount.setEnabled(false);
                                 giftVO.setGift_buy_qty(giftVO.getGift_buy_qty() - 1);
                                 viewHolder.gift_amount.setText(giftVO.getGift_buy_qty().toString());
-                                int backprice = (int) (giftVO.getGift_price() * giftVO.getGift_buy_qty() * giftDlist.get(i).getGiftd_percent());
+                            }
+                                amount = giftVO.getGift_buy_qty();
+                                Double percent = giftDlist.get(i).getGiftd_percent();
+                                price = (int)(price * percent);
+                                int backprice = (price * amount);
                                 viewHolder.gift_price.setText("$" + String.valueOf(backprice));
-                            } else {
-                                addprice = (int) (addprice * giftDlist.get(i).getGiftd_percent());
-                                viewHolder.gift_price.setText("$" + String.valueOf(addprice));
                             }
                         }
-                    }
                     getPrice();
                 }
             });
@@ -399,24 +505,16 @@ public class CartActivity extends AppCompatActivity {
                                         @Override
                                         public void onClick(DialogInterface dialog,
                                                             int which) {
-                                            Log.e("tag", "receiveList=" + receiveList.size());
                                             Iterator<GiftReceiveVO> iterator = receiveList.iterator();
                                             while(iterator.hasNext()){
                                                 if(giftVO.getGift_no().equals(iterator.next().getGift_no()))
                                                     iterator.remove();
                                             }
-                                            Log.e("tag", "receiveList=" + receiveList.size());
-                                            for(GiftReceiveVO receiveVO : receiveList){
-                                                Log.e("tag", "ReceiveVO=" + receiveVO.getGift_no());
-                                                Log.e("tag", "ReceiveVO=" + receiveVO.getGiftr_amount());
-                                                Log.e("tag", "ReceiveVO=" + receiveVO.getMem_no_self());
-                                                Log.e("tag", "ReceiveVO=" + receiveVO.getMem_no_other());
-                                            }
                                             Util.CART.remove(giftVO);
                                             Util.count--;
                                             total_amount.setText(String.valueOf(Util.count));
                                             getPrice();
-                                            recyclerview_gift.getAdapter().notifyDataSetChanged();
+                                            recyclerview_cart.getAdapter().notifyDataSetChanged();
                                         }
                                     })
 
@@ -449,18 +547,10 @@ public class CartActivity extends AppCompatActivity {
         if (index == -1) {
             giftReceiveVO.setGiftr_amount(amount);
             receiveList.add(giftReceiveVO);
-            Log.e("tag", "ReceiveVO1=" + giftReceiveVO.getGift_no());
-            Log.e("tag", "ReceiveVO1=" + giftReceiveVO.getGiftr_amount());
-            Log.e("tag", "ReceiveVO1=" + giftReceiveVO.getMem_no_self());
-            Log.e("tag", "ReceiveVO1=" + giftReceiveVO.getMem_no_other());
         } else {
             GiftReceiveVO orderReceive = receiveList.get(index);
             int order_amount = orderReceive.getGiftr_amount();
             orderReceive.setGiftr_amount(order_amount + amount);
-            Log.e("tag", "ReceiveVO=" + orderReceive.getGift_no());
-            Log.e("tag", "ReceiveVO=" + orderReceive.getGiftr_amount());
-            Log.e("tag", "ReceiveVO=" + orderReceive.getMem_no_self());
-            Log.e("tag", "ReceiveVO=" + orderReceive.getMem_no_other());
         }
     }
 
@@ -484,4 +574,5 @@ public class CartActivity extends AppCompatActivity {
         Log.e("tag", "ReceiveVO=" + orderReceive.getMem_no_self());
         Log.e("tag", "ReceiveVO=" + orderReceive.getMem_no_other());
     }
+
 }

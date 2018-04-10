@@ -1,4 +1,4 @@
-package idv.wei.ba107_g3.cart;
+package idv.wei.ba107_g3.gift_receive;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -120,3 +120,4 @@ public class GiftReceiveVO implements Serializable{
         this.giftr_message = giftr_message;
     }
 }
+
