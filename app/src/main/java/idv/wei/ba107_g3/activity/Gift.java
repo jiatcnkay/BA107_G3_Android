@@ -36,8 +36,11 @@ public class Gift extends AppCompatActivity {
         cart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(Gift.this, CartActivity.class);
-                startActivity(intent);
+                if(Util.CART.size()!=0) {
+                    Intent intent = new Intent(Gift.this, CartActivity.class);
+                    startActivity(intent);
+                }else
+                    Util.showMessage(Gift.this,"購物車目前是空的，請先購物");
             }
         });
         viewPager.setAdapter(new MySearchAdapter(getSupportFragmentManager()));

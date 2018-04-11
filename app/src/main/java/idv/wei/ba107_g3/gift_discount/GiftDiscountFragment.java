@@ -49,9 +49,14 @@ public class GiftDiscountFragment extends Fragment{
         count_giftd = view.findViewById(R.id.count_giftd);
         recyclerView_giftdiscount = view.findViewById(R.id.recyclerview_giftdiscount);
         recyclerView_giftdiscount.setHasFixedSize(true);
-            GiftDlist GiftDlist = new GiftDlist();
-            GiftDlist.execute();
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        GiftDlist GiftDlist = new GiftDlist();
+        GiftDlist.execute();
     }
 
     private class GiftDlist extends AsyncTask<String,Void,List<GiftDiscountVO>> {
@@ -229,6 +234,11 @@ public class GiftDiscountFragment extends Fragment{
         public int getItemCount() {
             return giftD.size();
         }
+    }
+
+    public void refresh(){
+        GiftDlist GiftDlist = new GiftDlist();
+        GiftDlist.execute();
     }
 
 }
