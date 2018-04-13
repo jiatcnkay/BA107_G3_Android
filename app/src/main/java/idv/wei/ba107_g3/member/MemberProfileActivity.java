@@ -8,7 +8,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -25,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import idv.wei.ba107_g3.R;
+import idv.wei.ba107_g3.activity.Gift;
 import idv.wei.ba107_g3.friends.FriendsListDAO;
 import idv.wei.ba107_g3.friends.FriendsListDAO_interface;
 import idv.wei.ba107_g3.main.Util;
@@ -52,8 +52,33 @@ public class MemberProfileActivity extends AppCompatActivity {
         giftfab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                pref = getSharedPreferences(Util.PREF_FILE, MODE_PRIVATE);
+                if (!pref.getBoolean("login", false)) {
+                    List<MemberVO> list = new ArrayList<>();
+                    MemberVO noOne = new MemberVO();
+                    noOne.setMemName("請選擇");
+                    list.add(noOne);
+                    list.add(member);
+                    pref.edit().putString("sendList",new Gson().toJson(list)).apply();
+                }else {
+                    String jsonSendList = pref.getString("sendList","");
+                    Type listType = new TypeToken<List<MemberVO>>() {
+                    }.getType();
+                    List<MemberVO> sendList = new Gson().fromJson(jsonSendList.toString(),listType);
+                    List<MemberVO> list = new ArrayList<>();
+                    MemberVO noOne = new MemberVO();
+                    noOne.setMemName("請選擇");
+                    list.add(noOne);
+                    for(MemberVO memberVO : sendList){
+                        list.add(memberVO);
+                    }
+                    if(!sendList.contains(member)){
+                        list.add(member);
+                    }
+                    pref.edit().putString("sendList",new Gson().toJson(list)).apply();
+                }
+                Intent intent = new Intent(MemberProfileActivity.this, Gift.class);
+                startActivity(intent);
             }
         });
         addfab.setOnClickListener(new View.OnClickListener() {

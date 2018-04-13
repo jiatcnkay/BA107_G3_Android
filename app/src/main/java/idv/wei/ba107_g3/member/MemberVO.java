@@ -31,6 +31,19 @@ public class MemberVO implements Serializable {
     private String memSetNotify;
     private Date memTimeNotify;
     private String memAge;
+    private Integer memReceiveGift;
+
+    @Override
+    // 要比對欲加入商品與購物車內商品的gift_no是否相同，true則值相同
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || !(obj instanceof MemberVO)) {
+            return false;
+        }
+        return this.getMemAccount().equals(((MemberVO)obj).getMemAccount());
+    }
 
     public MemberVO(){
     }
@@ -250,5 +263,13 @@ public class MemberVO implements Serializable {
     public void setMemAge(String memAge) {
         this.memAge = memAge;
     }
+
+    public Integer getMemReceiveGift() {
+        return memReceiveGift;
+    }
+
+    public void setMemReceiveGift(Integer memReceiveGift) {
+        this.memReceiveGift = memReceiveGift;
+    };
 }
 

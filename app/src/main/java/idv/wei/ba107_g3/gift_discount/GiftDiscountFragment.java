@@ -95,6 +95,7 @@ public class GiftDiscountFragment extends Fragment{
             recyclerView_giftdiscount.setLayoutManager(new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL));
             giftDAdapter = new GiftDAdapter();
             recyclerView_giftdiscount.setAdapter(giftDAdapter);
+            recyclerView_gift.getAdapter().notifyDataSetChanged();
         }
     }
 
@@ -234,11 +235,6 @@ public class GiftDiscountFragment extends Fragment{
         public int getItemCount() {
             return giftD.size();
         }
-    }
-
-    public void refresh(){
-        GiftDlist GiftDlist = new GiftDlist();
-        GiftDlist.execute();
     }
 
 }

@@ -32,6 +32,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import idv.wei.ba107_g3.R;
 import idv.wei.ba107_g3.gift.GiftVO;
@@ -44,6 +45,8 @@ import idv.wei.ba107_g3.gift_receive.GiftReceiveVO;
 import idv.wei.ba107_g3.main.MainActivity;
 import idv.wei.ba107_g3.main.Util;
 import idv.wei.ba107_g3.member.LoginActivity;
+import idv.wei.ba107_g3.member.MemberDAO;
+import idv.wei.ba107_g3.member.MemberDAO_interface;
 import idv.wei.ba107_g3.member.MemberVO;
 
 import static idv.wei.ba107_g3.gift.GiftFragment.recyclerView_gift;
@@ -57,6 +60,8 @@ public class CartActivity extends AppCompatActivity {
     private List<GiftDiscountVO> checkoutGiftList;
     private ArrayList<GiftReceiveVO> receiveList = new ArrayList<>();
     private String mem_no_self;
+    private String mem_account;
+    private MemberSelect memberSelect;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +80,7 @@ public class CartActivity extends AppCompatActivity {
         if (pref.getBoolean("login", false)) {
             MemberVO member = new Gson().fromJson(pref.getString("loginMem", "").toString(), MemberVO.class);
             mem_no_self = member.getMemNo();
+            mem_account = member.getMemAccount();
         }
         giftDlist = new Gson().fromJson(pref.getString("giftDlist", "").toString(), new TypeToken<List<GiftDiscountVO>>() {
         }.getType());
@@ -129,31 +135,22 @@ public class CartActivity extends AppCompatActivity {
         //結帳前先去確認優惠名單是否跟先前一樣
         checkoutGiftList = new Gson().fromJson(pref.getString("giftDlist", "").toString(), new TypeToken<List<GiftDiscountVO>>() {
         }.getType());
+
         Iterator<GiftDiscountVO> checkoutIterator = checkoutGiftList.iterator();
         while(checkoutIterator.hasNext()){
             if(checkoutIterator.next().getGiftd_amount()==0)
                 checkoutIterator.remove();
         }
 
-        if(checkoutGiftList.size()!=0) {
-            Iterator<GiftDiscountVO> iterator = giftDlist.iterator();
-            while (iterator.hasNext()) {
-                for (GiftDiscountVO giftDiscountVO : checkoutGiftList) {
-                    if (iterator.next().getGift_no().equals(giftDiscountVO.getGift_no()))
-                        iterator.remove();
-                }
-            }
-
+        if(giftDlist.size()!=checkoutGiftList.size()) {
             //如果名單有異動就會執行這個動作，而不會直接進行結帳動作
-            if (giftDlist.size() != 0) {
                 giftDlist = checkoutGiftList;
                 recyclerview_cart.getAdapter().notifyDataSetChanged();
                 getPrice();
-                showResult("部分商品優惠結束，請確認價格後再結帳",0);
+                showResult("部分商品優惠結束，請確認價格後再結帳", 0);
                 return;
-            }
-            giftDlist = checkoutGiftList;
         }
+            giftDlist = checkoutGiftList;
 
         //設定訂單
         GiftOrderVO giftOrderVO = new GiftOrderVO();
@@ -170,6 +167,7 @@ public class CartActivity extends AppCompatActivity {
             giftOrderDetailVO.setGiftod_unit(price);
             giftOrderDetailVO.setGiftod_amount(Util.CART.get(i).getGift_buy_qty());
             giftOrderDetailVO.setGiftod_money(price * (Util.CART.get(i).getGift_buy_qty()));
+            giftOrderDetailVO.setGiftod_inventory(0);
             for (int j = 0; j < giftDlist.size(); j++) {
                 //找優惠商品
                 if (Util.CART.get(i).getGift_no().equals(giftDlist.get(j).getGift_no())) {
@@ -179,27 +177,22 @@ public class CartActivity extends AppCompatActivity {
                     giftOrderDetailVO.setGiftd_no(giftDlist.get(j).getGiftd_no());
                     giftOrderDetailVO.setGiftod_amount(Util.CART.get(i).getGift_buy_qty());
                     giftOrderDetailVO.setGiftod_money(price * (Util.CART.get(i).getGift_buy_qty()));
-                    giftOrderDetailVO.setGiftod_inventory(0);
                 }
             }
             Log.e("tag","detail"+giftOrderDetailVO.getGiftd_no());
             goDetailList.add(giftOrderDetailVO);
 
-            int amount = 0;
-            for (int k = 0; k < receiveList.size(); k++) {
-                if (giftOrderDetailVO.getGift_no().equals(receiveList.get(k).getGift_no())) {
-                    amount += receiveList.get(k).getGiftr_amount();
-                }
-            }
-            if ((giftOrderDetailVO.getGiftod_amount() - amount) != 0) {
-                GiftReceiveVO giftReceiveVO = new GiftReceiveVO();
-                giftReceiveVO.setGift_no(Util.CART.get(i).getGift_no());
-                giftReceiveVO.setGiftr_amount(Util.CART.get(i).getGift_buy_qty() - amount);
-                giftReceiveVO.setMem_no_self(mem_no_self);
-                giftReceiveVO.setMem_no_other(mem_no_self);
-                receiveList.add(giftReceiveVO);
-            }
         }
+
+        for(GiftReceiveVO giftReceiveVO : receiveList){
+            if(giftReceiveVO.getMem_no_self()==null)
+                giftReceiveVO.setMem_no_self(mem_no_self);
+            Log.e("tag", "ReceiveVO=" +  giftReceiveVO.getGift_no());
+            Log.e("tag", "ReceiveVO=" +  giftReceiveVO.getGiftr_amount());
+            Log.e("tag", "ReceiveVO=" +  giftReceiveVO.getMem_no_self());
+            Log.e("tag", "ReceiveVO=" +  giftReceiveVO.getMem_no_other());
+        }
+
         String jsonGiftOrderVO = new Gson().toJson(giftOrderVO);
         String jsonGiftOrderDetailVOList = new Gson().toJson(goDetailList);
         String jsonGiftReceiveList = new Gson().toJson(receiveList);
@@ -207,42 +200,66 @@ public class CartActivity extends AppCompatActivity {
         giftOrder.execute(jsonGiftOrderVO, jsonGiftOrderDetailVOList, jsonGiftReceiveList);
     }
 
-    private class GiftOrder extends AsyncTask<String, Void, List<GiftDiscountVO>> {
+    private class GiftOrder extends AsyncTask<String, Void, String> {
 
         @Override
-        protected List<GiftDiscountVO> doInBackground(String... strings) {
+        protected String doInBackground(String... strings) {
             GiftOrderDAO_interface dao = new GiftOrderDAO();
             return dao.insert(strings[0], strings[1], strings[2]);
         }
 
         @Override
-        protected void onPostExecute(List<GiftDiscountVO> giftDiscountVOS) {
-            super.onPostExecute(giftDiscountVOS);
-            if (giftDiscountVOS != null) {
-                SharedPreferences pref = CartActivity.this.getSharedPreferences(Util.PREF_FILE, Context.MODE_PRIVATE);
-                pref.edit().putString("giftDlist", new Gson().toJson(giftDiscountVOS)).apply();
-                StringBuilder sb = new StringBuilder();
-                sb.append("因以下幾種原因:\n");
-                for (int i = 0; i < Util.CART.size(); i++) {
-                    for (int j = 0; j < giftDiscountVOS.size(); j++) {
-                        if (giftDiscountVOS.get(j).getGift_no().equals(Util.CART.get(i).getGift_no()) && giftDiscountVOS.get(j).getGiftd_amount() < Util.CART.get(i).getGift_buy_qty()) {
-                            if (giftDiscountVOS.get(j).getGiftd_amount() != 0) {
-                                sb.append((i + 1) + ". " + Util.CART.get(i).getGift_name() + ":\n此優惠商品剩餘數量 : " + giftDiscountVOS.get(j).getGiftd_amount() + "\n\n");
-                                Util.CART.get(i).setGift_buy_qty(giftDiscountVOS.get(j).getGiftd_amount());
+        protected void onPostExecute(String back) {
+            super.onPostExecute(back);
+            Gson gson = new Gson();
+            String result = back;
+            Log.e("tag","result="+result);
+            if(result.equals("金額不足") || result.equals("結帳成功")) {
+                switch (result) {
+                    case "金額不足":
+                        showResult("點數不足，請先加值",0);
+                        break;
+                    case "結帳成功":
+                        SharedPreferences pref = getSharedPreferences(Util.PREF_FILE,MODE_PRIVATE);
+                        memberSelect = new MemberSelect();
+                        try {
+                            MemberVO member = memberSelect.execute(mem_account).get();
+                            pref.edit().putString("loginMem",new Gson().toJson(member)).apply();
+                        } catch (InterruptedException |ExecutionException e) {
+                            e.printStackTrace();
+                        }
+                        showResult("結帳成功",1);
+                        break;
+                }
+            }else {
+                Type listType = new TypeToken<List<GiftDiscountVO>>() {
+                }.getType();
+                List<GiftDiscountVO> giftDiscountVOS = gson.fromJson(back,listType);
+                Log.e("tag","list="+giftDiscountVOS);
+                if (giftDiscountVOS != null) {
+                    SharedPreferences pref = CartActivity.this.getSharedPreferences(Util.PREF_FILE, Context.MODE_PRIVATE);
+                    pref.edit().putString("giftDlist", new Gson().toJson(giftDiscountVOS)).apply();
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("因以下幾種原因:\n");
+                    for (int i = 0; i < Util.CART.size(); i++) {
+                        for (int j = 0; j < giftDiscountVOS.size(); j++) {
+                            if (giftDiscountVOS.get(j).getGift_no().equals(Util.CART.get(i).getGift_no()) && giftDiscountVOS.get(j).getGiftd_amount() < Util.CART.get(i).getGift_buy_qty()) {
+                                if (giftDiscountVOS.get(j).getGiftd_amount() != 0) {
+                                    sb.append((i + 1) + ". " + Util.CART.get(i).getGift_name() + ":\n此優惠商品剩餘數量 : " + giftDiscountVOS.get(j).getGiftd_amount() + "\n\n");
+                                    Util.CART.get(i).setGift_buy_qty(giftDiscountVOS.get(j).getGiftd_amount());
 
-                            } else {
-                                sb.append((i + 1) + ". " + Util.CART.get(i).getGift_name() + ":\n此優惠商品已完售，故恢復成原價\n\n");
-                                giftDiscountVOS.remove(giftDiscountVOS.get(j));
+                                } else {
+                                    sb.append((i + 1) + ". " + Util.CART.get(i).getGift_name() + ":\n此優惠商品已完售，故恢復成原價\n\n");
+                                    giftDiscountVOS.remove(giftDiscountVOS.get(j));
+                                }
                             }
                         }
                     }
+                    sb.append("請麻煩確認數量及價格後，再進行購買，Thanks~");
+                    recyclerView_giftdiscount.getAdapter().notifyDataSetChanged();
+                    recyclerView_gift.getAdapter().notifyDataSetChanged();
+                    showResult(sb.toString(), 0);
                 }
-                sb.append("請麻煩確認數量及價格後，再進行購買，Thanks~");
-                recyclerView_giftdiscount.getAdapter().notifyDataSetChanged();
-                recyclerView_gift.getAdapter().notifyDataSetChanged();
-                showResult(sb.toString(),0);
-            } else {
-                showResult("結帳成功",1);
             }
         }
     }
@@ -632,6 +649,14 @@ public class CartActivity extends AppCompatActivity {
                                     dialog.cancel();
                                 }
                             }).show();
+        }
+    }
+
+    class MemberSelect extends AsyncTask<String, Void, MemberVO> {
+        @Override
+        protected MemberVO doInBackground(String... params) {
+            MemberDAO_interface dao = new MemberDAO();
+            return dao.getOneByAccount(params[0]);
         }
     }
 }

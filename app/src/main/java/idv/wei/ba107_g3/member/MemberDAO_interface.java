@@ -9,4 +9,5 @@ public interface MemberDAO_interface {
     MemberVO getOneByMemNo(String mem_no);
     List<MemberVO> getLike(String map);
     List<MemberVO> getAll();
+    List<MemberVO> getPopular();
 }

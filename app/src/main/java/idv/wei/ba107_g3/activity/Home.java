@@ -1,7 +1,14 @@
 package idv.wei.ba107_g3.activity;
 
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
@@ -17,14 +24,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import idv.wei.ba107_g3.R;
-import idv.wei.ba107_g3.friends.FriendsListVO;
+import idv.wei.ba107_g3.main.Util;
+import idv.wei.ba107_g3.member.MemberDAO;
+import idv.wei.ba107_g3.member.MemberDAO_interface;
+import idv.wei.ba107_g3.member.MemberProfileActivity;
+import idv.wei.ba107_g3.member.MemberVO;
 
 public class Home extends Fragment {
-
-    private List<FriendsListVO> friendList;
     private RecyclerView recyclerView;
     private CarouselView carouselView;
     private int[] sampleImages = {R.drawable.carousel1,R.drawable.carousel2,R.drawable.carousel3};
+    private ProgressDialog progressDialog;
+    private List<MemberVO> popularList = new ArrayList<>();
 
 
     @Override
@@ -36,10 +47,38 @@ public class Home extends Fragment {
         carouselView.setImageListener(imageListener);
         recyclerView = view.findViewById(R.id.recyclerview);
         recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.HORIZONTAL));
-        friendList = getFriendList();
-        recyclerView.setAdapter(new PopularAdapter(inflater));
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        GetPopular getPopular = new GetPopular();
+        getPopular.execute();
+    }
+
+    private class GetPopular extends AsyncTask<Void,Void,List<MemberVO>>{
+        @Override
+        protected void onPreExecute() {
+            progressDialog = new ProgressDialog(getActivity());
+            progressDialog.setMessage("Loading...");
+            progressDialog.show();
+        }
+
+        @Override
+        protected List<MemberVO> doInBackground(Void... voids) {
+            MemberDAO_interface dao = new MemberDAO();
+            return dao.getPopular();
+        }
+
+        @Override
+        protected void onPostExecute(List<MemberVO> memberVOS) {
+            super.onPostExecute(memberVOS);
+            progressDialog.cancel();
+            popularList = memberVOS;
+            recyclerView.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.HORIZONTAL));
+            recyclerView.setAdapter(new PopularAdapter(getContext()));
+        }
     }
 
     ImageListener imageListener = new ImageListener() {
@@ -49,46 +88,62 @@ public class Home extends Fragment {
         }
     };
 
-    private List<FriendsListVO> getFriendList() {
-        friendList = new ArrayList<>();
-        return friendList;
-    }
-
     private class PopularAdapter extends RecyclerView.Adapter<PopularAdapter.ViewHolder> {
-        private LayoutInflater inflater;
+        private Context context;
 
-        public PopularAdapter(LayoutInflater inflater) {
-            this.inflater = inflater;
+        public PopularAdapter(Context context) {
+            this.context = context;
         }
 
         class ViewHolder extends RecyclerView.ViewHolder {
-            private ImageView photo;
-            private TextView name, gender, county;
+            private ImageView mem_photo;
+            private TextView mem_name, mem_gender, mem_county,mem_receive_gift,mem_age;
+            private CardView popular_cardview;
 
             public ViewHolder(View itemView) {
                 super(itemView);
-                photo = itemView.findViewById(R.id.photo);
-                name = itemView.findViewById(R.id.name);
-                gender = itemView.findViewById(R.id.gender);
-                county = itemView.findViewById(R.id.county);
+                mem_age = itemView.findViewById(R.id.mem_age);
+                mem_photo = itemView.findViewById(R.id.mem_photo);
+                mem_name = itemView.findViewById(R.id.mem_name);
+                mem_gender = itemView.findViewById(R.id.mem_gender);
+                mem_county = itemView.findViewById(R.id.mem_county);
+                mem_receive_gift = itemView.findViewById(R.id.mem_receive_gift);
+                popular_cardview = itemView.findViewById(R.id.popular_cardview);
             }
         }
 
         @Override
         public int getItemCount() {
-            return friendList.size();
+            return popularList.size();
         }
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View itemview = inflater.inflate(R.layout.recycleview_home, parent, false);
+            View itemview = LayoutInflater.from(context).inflate(R.layout.recycleview_home, parent, false);
             return new ViewHolder(itemview);
         }
 
         @Override
         public void onBindViewHolder(ViewHolder viewholder, int position) {
-            viewholder.photo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-
+            final MemberVO member = popularList.get(position);
+            byte[] memPhoto = member.getMemPhoto();
+            Bitmap bitmap = BitmapFactory.decodeByteArray(memPhoto, 0, memPhoto.length);
+            viewholder.mem_photo.setImageBitmap(bitmap);
+            viewholder.mem_age.setText(Util.getAge(member.getMemAge()));
+            viewholder.mem_name.setText(member.getMemName());
+            viewholder.mem_gender.setText(member.getMemGender());
+            viewholder.mem_county.setText(member.getMemCounty());
+            viewholder.mem_receive_gift.setText(member.getMemReceiveGift().toString());
+            viewholder.popular_cardview.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent(getActivity(), MemberProfileActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("member", member);
+                    intent.putExtras(bundle);
+                    startActivity(intent);
+                }
+            });
         }
     }
 }

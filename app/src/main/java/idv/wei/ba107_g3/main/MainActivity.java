@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         ImageView memPhoto = navigationView.getHeaderView(0).findViewById(R.id.memPhoto);
         TextView memName = navigationView.getHeaderView(0).findViewById(R.id.memName);
         TextView memDeposit = navigationView.getHeaderView(0).findViewById(R.id.memDeposit);
-        TextView memBonus = navigationView.getHeaderView(0).findViewById(R.id.memBonus);
+       // TextView memBonus = navigationView.getHeaderView(0).findViewById(R.id.memBonus);
         RelativeLayout navi_layout = navigationView.getHeaderView(0).findViewById(R.id.navi_layout);
         navi_layout.setVisibility(View.VISIBLE);
         logo.setVisibility(View.INVISIBLE);
@@ -196,6 +196,6 @@ public class MainActivity extends AppCompatActivity {
         memPhoto.setImageBitmap(bitmap);
         memName.setText(memberVO.getMemName());
         memDeposit.setText(memberVO.getMemDeposit().toString() + getString(R.string.dollar));
-        memBonus.setText(memberVO.getMemBonus().toString() + getString(R.string.point));
+       // memBonus.setText(memberVO.getMemBonus().toString() + getString(R.string.point));
     }
 }

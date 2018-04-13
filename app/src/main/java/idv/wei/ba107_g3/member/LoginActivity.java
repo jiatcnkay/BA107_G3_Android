@@ -4,13 +4,16 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -26,6 +29,7 @@ public class LoginActivity extends AppCompatActivity {
     private MemberSelect memberSelect;
     private GetFriendsList getFriendsList;
     private List<MemberVO> friendList;
+    private List<MemberVO> sendList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,10 +93,19 @@ public class LoginActivity extends AppCompatActivity {
                 friendList = getFriendsList.execute(member.getMemNo()).get();
                 String memJson = new Gson().toJson(member);
                 String friends = new Gson().toJson(friendList);
-                List<MemberVO> sendList = new ArrayList<>();
-                MemberVO noOne = new MemberVO();
-                noOne.setMemName("請選擇");
-                sendList.add(noOne);
+
+                String jsonSendList = pref.getString("sendList","");
+                Log.e("tag","list="+jsonSendList);
+                if(jsonSendList.length()!=0) {
+                    Type listType = new TypeToken<List<MemberVO>>() {
+                    }.getType();
+                    sendList = new Gson().fromJson(jsonSendList.toString(), listType);
+                }else {
+                    sendList = new ArrayList<>();
+                    MemberVO noOne = new MemberVO();
+                    noOne.setMemName("請選擇");
+                    sendList.add(noOne);
+                }
                 for(MemberVO memberVO : friendList){
                     sendList.add(memberVO);
                 }
